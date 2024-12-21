@@ -8,7 +8,7 @@
 /* General Body Styling */
 body {
     font-family: 'Roboto', sans-serif;
-    background-color: #f5f5f5; /* Ensure body background is light */
+    background-color: #f5f5f5;
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -26,44 +26,67 @@ body {
     top: 0;
     z-index: 1000;
     width: 100%;
+    height:100px
 }
 
 .header h2 {
     font-size: 2rem;
     color: #5071FF;
+    cursor: pointer;
 }
 
+/* Ensure that the tabs are centered */
 .tabs {
     display: flex;
     gap: 10px;
+    padding: 10px;
+    background-color: #6485FF;
+    border-radius: 15px;
+    justify-content: center;
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    justify-content: center;
+    margin-right: 30px;
+}
+
+/* Icon styling */
+.header-right .icon {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+/* Tab Button Styling */
 .tab-btn {
-    background-color: #eee;
+    background-color: #6485FF;
     border: none;
     padding: 10px 20px;
     font-size: 1rem;
-    border-radius: 5px;
+    border-radius: 15px;
     cursor: pointer;
 }
 
 .tab-btn.active {
-    background-color: #007AFF;
+    background-color: #2D3F8E;
     color: white;
 }
 
 /* Main Layout Styling */
 main {
     display: flex;
-    flex: 1; /* Allows main content to expand */
+    flex: 1;
     width: 100%;
-    height: calc(100vh - 60px); /* Subtract the header height */
-    background-color: #fff; /* Make sure the background around the sidebar is white */
+    height: calc(100vh - 60px);
+    background-color: #fff;
 }
 
 /* Sidebar Styling */
 .sidebar {
-    width: 20%; /* Occupies 20% of the width */
+    width: 20%;
     background-color: #007AFF;
     color: white;
     padding: 25px;
@@ -71,7 +94,7 @@ main {
     flex-direction: column;
     border-radius: 21px;
     gap: 25px;
-    margin: 20px; /* Adds white margin around the sidebar */
+    margin: 20px;
 }
 
 /* Button Styling Inside Sidebar */
@@ -95,8 +118,8 @@ main {
 .dashboard {
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* Creates 3 equal columns */
-    gap: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
     padding: 20px;
     background-color: #fff;
     overflow-y: auto;
@@ -105,20 +128,22 @@ main {
 /* Dashboard Cards */
 .card {
     background-color: #007AFF;
-    color: white;
+    color: rgb(0, 0, 0);
     padding: 20px;
-    border-radius: 10px;
+    border-radius: 21px;
     text-align: center;
     font-size: 1.2rem;
+    font-weight: bold;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 150px; /* Fixed height for uniformity */
+    height: 150px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
 }
 
 .card.large {
-    grid-column: span 2; /* Spans 2 columns for larger cards */
+    grid-column: span 2;
 }
 
 /* Progress Bar */
@@ -138,7 +163,7 @@ main {
 /* Media Queries for Mobile Responsiveness */
 @media (max-width: 768px) {
     main {
-        flex-direction: column; /* Stack sidebar and dashboard on smaller screens */
+        flex-direction: column;
     }
 
     .sidebar {
@@ -148,17 +173,17 @@ main {
     }
 
     .dashboard {
-        grid-template-columns: 1fr; /* Stack cards vertically on smaller screens */
+        grid-template-columns: 1fr;
     }
 
     .card.large {
-        grid-column: span 1; /* Make large cards span full width on small screens */
+        grid-column: span 1;
     }
 }
 
 @media (max-width: 480px) {
     .header h2 {
-        font-size: 1.2rem; /* Smaller header font on mobile */
+        font-size: 1.2rem;
     }
 
     .tabs {
