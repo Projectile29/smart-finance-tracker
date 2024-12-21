@@ -7,6 +7,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
   
     if (username && password) {
       alert(`Welcome, ${username}!`);
+      window.location.href="\dashboard.html";
       // Add logic to verify the credentials via server-side (if needed)
     } else {
       alert('Please enter both username and password.');

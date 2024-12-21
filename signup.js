@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
   
         if (response.status === 201) {
           alert('User created successfully');
+          window.location.href="\login.html";
         } else {
           alert(result.message || 'Something went wrong');
         }
