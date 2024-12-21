@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Finance Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
+  <link rel="stylesheet" href="dashboard.css">
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script defer src="dashboard.js"></script>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <h2>Smart Finance Tracker</h2>
+        <div class="tabs">
+            <button class="tab-btn active">Monthly</button>
+            <button class="tab-btn">Yearly</button>
+            <button class="tab-btn">
+              Today <i class="calendar-icon"></i>
+            </button>
+        </div>
+        <div class="header-icons">
+            <i class="fas fa-bell"></i>
+            <i class="fas fa-user"></i>
+        </div>
+    </header>
+
+    <main>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <button class="nav-btn">Expenses</button>
+            <button class="nav-btn">Budget</button>
+            <button class="nav-btn">Reports</button>
+            <button class="nav-btn">Goals</button>
+        </aside>
+
+        <!-- Dashboard Content -->
+        <section class="dashboard">
+            <div class="card">Total Expenses<br>₹50,000</div>
+            <div class="card">Savings Overview<br>₹50,000</div>
+            <div class="card">Remaining Budget<br>₹82,000</div>
+            <div class="card">
+                Income Goal<br>
+                <div class="progress-bar">
+                    <div class="progress" style="width: 67%;"></div>
+                </div>
+            </div>
+            <div class="card">Income<br>₹50,000</div>
+            <div class="card large">Monthly Tracking</div>
+            <div class="card large">Spendings</div>
+        </section>
+    </main>
+
+    <!-- Tab Content Sections -->
+    <section class="content-section monthly" style="display: block;">
+        <!-- Monthly Content -->
+        <p>Monthly Data</p>
+    </section>
+    <section class="content-section yearly" style="display: none;">
+        <!-- Yearly Content -->
+        <p>Yearly Data</p>
+    </section>
+    <section class="content-section today" style="display: none;">
+        <!-- Today's Content -->
+        <p>Today's Data</p>
+    </section>
+</body>
+</html>

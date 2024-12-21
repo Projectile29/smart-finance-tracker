@@ -1,0 +1,171 @@
+/* Reset Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* General Body Styling */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f5f5f5; /* Ensure body background is light */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header Styling */
+.header {
+    background-color: white;
+    padding: 30px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+}
+
+.header h2 {
+    font-size: 2rem;
+    color: #5071FF;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+}
+
+.tab-btn {
+    background-color: #eee;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    background-color: #007AFF;
+    color: white;
+}
+
+/* Main Layout Styling */
+main {
+    display: flex;
+    flex: 1; /* Allows main content to expand */
+    width: 100%;
+    height: calc(100vh - 60px); /* Subtract the header height */
+    background-color: #fff; /* Make sure the background around the sidebar is white */
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 20%; /* Occupies 20% of the width */
+    background-color: #007AFF;
+    color: white;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 21px;
+    gap: 25px;
+    margin: 20px; /* Adds white margin around the sidebar */
+}
+
+/* Button Styling Inside Sidebar */
+.sidebar button {
+    background-color: white;
+    color: #000000;
+    border: none;
+    padding: 20px;
+    font-size: 1.4rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.sidebar button:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+/* Dashboard Section */
+.dashboard {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Creates 3 equal columns */
+    gap: 20px;
+    padding: 20px;
+    background-color: #fff;
+    overflow-y: auto;
+}
+
+/* Dashboard Cards */
+.card {
+    background-color: #007AFF;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 1.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 150px; /* Fixed height for uniformity */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.large {
+    grid-column: span 2; /* Spans 2 columns for larger cards */
+}
+
+/* Progress Bar */
+.progress-bar {
+    background-color: white;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress {
+    background-color: #0056b3;
+    height: 10px;
+    border-radius: 5px;
+}
+
+/* Media Queries for Mobile Responsiveness */
+@media (max-width: 768px) {
+    main {
+        flex-direction: column; /* Stack sidebar and dashboard on smaller screens */
+    }
+
+    .sidebar {
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .dashboard {
+        grid-template-columns: 1fr; /* Stack cards vertically on smaller screens */
+    }
+
+    .card.large {
+        grid-column: span 1; /* Make large cards span full width on small screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .header h2 {
+        font-size: 1.2rem; /* Smaller header font on mobile */
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
+
+    .tab-btn {
+        font-size: 0.9rem;
+    }
+}
