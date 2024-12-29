@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Smart Finance Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
+    <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <h2>Smart Finance Tracker</h2>
+       
+        <div class="header-right">
+            <img src="assets/notification-icon.png" alt="Notifications" class="icon notification">
+            
+        </div>
+    </header>
+
+    <main>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <button class="nav-btn">Expenses</button>
+            <button class="nav-btn">Budget</button>
+            <button class="nav-btn">Reports</button>
+            <button class="nav-btn">Goals</button>
+            <button class="nav-btn" onclick="window.location.href='dashboard.html'">Dashboard</button>
+        </aside>
+
+        <!-- Profile Content -->
+        <section class="content">
+            <div class="profile">
+                <div class="profile-header">
+                    <div class="profile-pic-container">
+                        <label for="profile-pic" style="cursor: pointer;">
+                            <img src="https://via.placeholder.com/150" alt="Profile Picture" id="profile-img">
+                        </label>
+                        <input type="file" id="profile-pic" style="display: none;" accept="image/*" onchange="loadProfilePicture(event)">
+                    </div>
+                    <h2>Bliss Fernandes</h2>
+                </div>
+                <div class="profile-details">
+                    <div>
+                        <label for="first-name">First Name:</label>
+                        <input type="text" id="first-name" value="Bliss" disabled>
+                    </div>
+                    <div>
+                        <label for="last-name">Last Name:</label>
+                        <input type="text" id="last-name" value="Fernandes" disabled>
+                    </div>
+                    <div>
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" value="blissfernandes@gmail.com" disabled>
+                    </div>
+                    <div>
+                        <label for="phone">Phone No:</label>
+                        <input type="tel" id="phone" value="234567897654" disabled>
+                    </div>
+                    <div>
+                        <label for="dob">DOB:</label>
+                        <input type="date" id="dob" value="2003-04-03" disabled>
+                    </div>
+                    <div>
+                        <label for="gender">Gender:</label>
+                        <input type="text" id="gender" value="Male" disabled>
+                    </div>
+                    <div>
+                        <label for="country">Country:</label>
+                        <input type="text" id="country" value="India" disabled>
+                    </div>
+                    <div>
+                        <label for="state">State:</label>
+                        <input type="text" id="state" value="Goa" disabled>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button onclick="enableEdit()">Edit Profile</button>
+                    <button onclick="saveProfile()">Save</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function enableEdit() {
+            const inputs = document.querySelectorAll('.profile-details input');
+            inputs.forEach(input => input.disabled = false);
+        }
+
+        function saveProfile() {
+            const inputs = document.querySelectorAll('.profile-details input');
+            inputs.forEach(input => input.disabled = true);
+            alert('Profile saved successfully!');
+        }
+
+        function loadProfilePicture(event) {
+            const img = document.getElementById('profile-img');
+            img.src = URL.createObjectURL(event.target.files[0]);
+        }
+    </script>
+</body>
+</html>
