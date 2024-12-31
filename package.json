@@ -26,7 +26,10 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongoose": "^8.9.2",
+    "express-rate-limit": "^7.5.0",
+    "express-validator": "^7.2.1",
+    "firebase": "^11.1.0",
+    "mongoose": "^8.9.3",
     "nodemailer": "^6.9.16"
   }
 }
