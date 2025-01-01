@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Finance Tracker</title>
+    <link rel="stylesheet" href="budget.css">
+</head>
+<body>
+    <header>
+        <div class="logo">Smart Finance Tracker</div>
+        <div class="header-icons">
+            <button class="icon-btn">🏠</button>
+            <button class="icon-btn">🔔</button>
+            <button class="icon-btn">👤</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="menu-item">Expenses</div>
+            <div class="menu-item active">Budget</div>
+            <div class="menu-item">Reports</div>
+            <div class="menu-item">Goals</div>
+        </aside>
+
+        <main class="main-content">
+            <div class="budget-header">
+                <h2>Budget</h2>
+                <button class="add-btn">+</button>
+            </div>
+
+            <div class="card budget-overview">
+                <div class="card-header">
+                    <h3>Budget Overview:</h3>
+                    <button class="edit-btn">✏️</button>
+                </div>
+                <div class="budget-fields">
+                    <div class="field">
+                        <label>Total Budget:</label>
+                        <input type="text" value="₹2000" readonly>
+                    </div>
+                    <div class="field">
+                        <label>Remaining Budget:</label>
+                        <input type="text" value="₹750" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card category-details">
+                <div class="card-header">
+                    <h3>Category</h3>
+                    <button class="edit-btn">✏️</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Allocated Amount</th>
+                            <th>Spent Amount</th>
+                            <th>Remaining Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Groceries</td>
+                            <td>₹300</td>
+                            <td>₹250</td>
+                            <td>₹50</td>
+                        </tr>
+                        <tr>
+                            <td>Rent</td>
+                            <td>₹1200</td>
+                            <td>₹1200</td>
+                            <td>₹0</td>
+                        </tr>
+                        <tr>
+                            <td>Travel</td>
+                            <td>₹500</td>
+                            <td>₹200</td>
+                            <td>₹300</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="budget.js"></script>
+</body>
+</html>
