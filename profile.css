@@ -98,7 +98,7 @@ body {
 }
 
 .sidebar button:hover {
-    background-color: #0056b3;
+    background-color: #007AFF ;
     color: white;
 }
 
@@ -177,7 +177,7 @@ main {
 }
 
 .action-buttons button {
-    background-color: #6485FF;
+    background-color: #007AFF;
     color: white;
     padding: 15px 30px;
     font-size: 1.2rem;
