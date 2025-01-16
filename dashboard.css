@@ -107,6 +107,7 @@ main {
     border-radius: 20px;
     cursor: pointer;
     font-weight: bold;
+    width: 100%;
 }
 
 .sidebar button:hover {
