@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
+const Transaction = require('./Transaction');
 require('dotenv').config();
 
 // Initialize Express app
@@ -222,6 +223,16 @@ app.post('/reset-password', async (req, res) => {
   } catch (error) {
     console.error("Error during reset-password POST:", error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get all transactions
+app.get('/transactions', async (req, res) => {
+  try {
+    const transactions = await Transaction.find();
+    res.json(transactions);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching transactions' });
   }
 });
 
