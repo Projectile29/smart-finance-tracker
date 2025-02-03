@@ -1,0 +1,206 @@
+/* Reset Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* General Body Styling */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f5f5f5;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header Styling */
+.header {
+    background-color: white;
+    padding: 30px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+    height:100px
+}
+
+.header h2 {
+    font-size: 2rem;
+    color: #5071FF;
+    cursor: pointer;
+}
+
+/* Ensure that the tabs are centered */
+.tabs {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background-color: #6485FF;
+    border-radius: 15px;
+    justify-content: center;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    justify-content: center;
+    margin-right: 30px;
+}
+
+/* Icon styling */
+.header-right .icon {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+/* Tab Button Styling */
+.tab-btn {
+    background-color: #6485FF;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 15px;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    background-color: #2D3F8E;
+    color: white;
+}
+
+/* Main Layout Styling */
+main {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    height: calc(100vh - 60px);
+    background-color: #fff;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 20%;
+    background-color: #007AFF;
+    color: white;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 21px;
+    gap: 25px;
+    margin: 20px;
+}
+
+/* Button Styling Inside Sidebar */
+.sidebar button {
+    background-color: white;
+    color: #000000;
+    border: none;
+    padding: 20px;
+    font-size: 1.4rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+}
+
+.sidebar button:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+/* Dashboard Section */
+.dashboard {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    padding: 20px;
+    background-color: #fff;
+    overflow-y: auto;
+}
+
+
+.card.large {
+    grid-column: span 2;
+}
+
+.link-account {
+    background: #3b5998;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    cursor: pointer;
+}
+
+.add-expense {
+    background: #007bff;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.expenses-table, .total-expenses {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: #007bff;
+    color: white;
+}
+
+/* Media Queries for Mobile Responsiveness */
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .card.large {
+        grid-column: span 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h2 {
+        font-size: 1.2rem;
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
+
+    .tab-btn {
+        font-size: 0.9rem;
+    }
+}
