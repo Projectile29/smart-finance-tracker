@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expenses</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
+  <link rel="stylesheet" href="goals.css">
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script defer src="goals.js"></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <h2>Smart Finance Tracker</h2>
+    <div class="header-right">
+      <img src="assets/home-icon.png" alt="Home" class="icon">
+      <img src="assets/notification-icon.png" alt="Notifications" class="icon">
+      <img src="assets/profile-icon.png" alt="Profile" class="icon">
+    </div>
+  </header>
+
+  <main>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <button class="nav-btn">Expenses</button>
+      <button class="nav-btn">Budget</button>
+      <button class="nav-btn">Reports</button>
+      <button class="nav-btn active">Goals</button>
+    </aside>
+
+    <!-- Goals Section -->
+    <section class="content">
+      <div class="goals-header">
+        <h2>Goals</h2>
+        <button id="addGoalBtn" class="btn">Add Goals</button>
+      </div>
+
+      <!-- Goals Container -->
+      <div id="goalsContainer" class="goals-container">
+        <!-- Goals will be added here dynamically -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Goal Input Modal -->
+  <div id="goalModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Add a New Goal</h2>
+      <label>Goal Name:</label>
+      <input type="text" id="goalName" placeholder="Enter goal name">
+
+      <label>Target Amount (₹):</label>
+      <input type="number" id="targetAmount" placeholder="Enter target amount">
+
+      <label>Current Savings (₹):</label>
+      <input type="number" id="currentSavings" placeholder="Enter current savings">
+
+      <button id="saveGoalBtn" class="btn">Save Goal</button>
+    </div>
+  </div>
+  <!-- Delete Confirmation Pop-Up -->
+<div id="deleteModal">
+    <p>Are you sure you want to delete this goal?</p>
+    <button id="confirmDelete">Yes, Delete</button>
+    <button id="cancelDelete">Cancel</button>
+  </div>
+  
+
+  <script src="goals.js"></script>
+</body>
+</html>
