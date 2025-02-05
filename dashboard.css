@@ -65,8 +65,8 @@ body {
     background-color: #6485FF;
     border: none;
     padding: 10px 20px;
-    font-size: 1rem;
-    border-radius: 15px;
+    font-size: 1.2rem;
+    border-radius: 10px;
     cursor: pointer;
 }
 
