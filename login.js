@@ -16,19 +16,21 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
                 body: JSON.stringify({ email, password }), // Send the email and password
             });
 
-            const data = await response.json();
+            console.log('Response Status:', response.status); // Log response status
 
             if (response.ok) {
+                const data = await response.json();
+                console.log('Response Data:', data); // Log response data
                 // If login is successful, redirect to the dashboard
                 alert(`Welcome, ${email}!`);
                 window.location.href = "/dashboard.html"; // Redirect to dashboard
             } else {
-                // If login fails, show the error message
+                const data = await response.json();
                 alert(data.message || "Login failed, please try again.");
             }
         } catch (error) {
             alert("There was an error during login.");
-            console.error(error);
+            console.error('Error during login:', error); // Log the error for more details
         }
     } else {
         alert('Please enter both email and password.');

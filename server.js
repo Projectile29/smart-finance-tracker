@@ -78,18 +78,24 @@ app.post('/signup', [
 
 // API endpoint for login
 app.post('/login', async (req, res) => {
+  console.log("Incoming request body:", req.body); // Debugging log
+
   const { email, password } = req.body;
 
   if (!email || !password) {
+    console.error("Missing email or password in request body");
     return res.status(400).json({ message: 'Email and password are required' });
   }
 
   try {
     const user = await User.findOne({ email });
 
-    if (!user) {
+    if (!user || !user.password) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
+
+    console.log("Stored password hash:", user.password); // Debugging log
+    console.log("Entered password:", password); // Debugging log
 
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -103,6 +109,8 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+
 
 // API endpoint for password reset request
 app.post('/forgot-password', async (req, res) => {
