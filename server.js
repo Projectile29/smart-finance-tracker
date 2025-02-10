@@ -19,8 +19,7 @@ const port = process.env.PORT || 5000;
 // Enable CORS
 app.use(cors());
 
-// Middleware
-app.use(bodyParser.json());
+app.use(express.json());
 
 // Rate limiting to prevent abuse
 const limiter = rateLimit({
@@ -238,6 +237,83 @@ app.get("/transactions", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Define the Goal Schema
+const GoalSchema = new mongoose.Schema({
+  name: String, // Changed from `title`
+  targetAmount: { type: Number, required: true }, // Changed from `target`
+  currentSavings: { type: Number, required: true }, // Changed from `savings`
+  completed: { type: Boolean, default: false },
+});
+
+
+
+const Goal = mongoose.model("Goal", GoalSchema);
+
+// 🟢 GET All Goals
+app.get('/goals', async (req, res) => {
+  try {
+      const goals = await Goal.find();  // Make sure `Goal` model is defined
+      res.json(goals);
+  } catch (error) {
+      console.error('Error fetching goals:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
+
+// 🟢 POST Create a New Goal
+app.post("/goals", async (req, res) => {
+  try {
+    const { name, targetAmount, currentSavings } = req.body;
+    const newGoal = new Goal({ name, targetAmount, currentSavings });
+    await newGoal.save();
+    res.status(201).json(newGoal);
+  } catch (err) {
+    res.status(500).json({ error: "Error creating goal" });
+  }
+});
+
+
+// 🟢 PUT Update a Goal
+app.put("/goals/:id", async (req, res) => {
+  try {
+    const { name, description, target, savings, completed } = req.body;
+    const updatedGoal = await Goal.findByIdAndUpdate(
+      req.params.id,
+      { title, description, target, savings, completed },
+      { new: true, runValidators: true }  // ✅ Ensures validation rules apply
+    );
+
+    if (!updatedGoal) {
+      return res.status(404).json({ error: "Goal not found" });
+    }
+
+    res.json(updatedGoal);
+  } catch (err) {
+    res.status(500).json({ error: "Error updating goal" });
+  }
+});
+
+
+
+// 🔴 DELETE a Goal
+app.delete("/goals/:id", async (req, res) => {
+  try {
+    const deletedGoal = await Goal.findByIdAndDelete(req.params.id);
+
+    if (!deletedGoal) {
+      return res.status(404).json({ error: "Goal not found" });
+    }
+
+    res.json({ message: "Goal deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Error deleting goal" });
+  }
+});
+
 
 // Start Server
 app.listen(port, () => {
