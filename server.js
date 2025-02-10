@@ -2,13 +2,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
+const multer = require('multer');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
-const Transaction = require('./Transaction');
 require('dotenv').config();
 
 // Initialize Express app
@@ -28,224 +29,217 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+app.use('/uploads', express.static('uploads'));
+
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB connection error:", err));
 
-
 // User schema
 const userSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, unique: true },
+  firstName: String,
+  lastName: String,
+  email: { type: String, unique: true, required: true },
   password: String,
+  phone: String,
+  dob: String,
+  gender: String,
+  country: String,
+  state: String,
+  profilePic: String,
   resetPasswordToken: String,
   resetPasswordExpires: Date,
 });
 
 const User = mongoose.model('User', userSchema);
 
-// API endpoint to handle signup
-app.post('/signup', [
-  body('name').notEmpty().withMessage('Name is required'),
-  body('email').isEmail().withMessage('Invalid email format'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { name, email, password } = req.body;
-
+// User Registration
+app.post('/signup', async (req, res) => {
   try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email already exists' });
+    const { firstName, lastName, email, phone, dob, gender, country, state, password } = req.body;
+
+    // Check if user exists
+    if (await User.findOne({ email })) {
+      return res.status(400).json({ message: 'Email already registered' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword });
+    const user = new User({ firstName, lastName, email, phone, dob, gender, country, state, password: hashedPassword });
 
-    await newUser.save();
-
-    res.status(201).json({ message: 'User created successfully' });
-  } catch (error) {
-    console.error("Error during signup:", error);
-    res.status(500).json({ message: 'Internal server error' });
+    await user.save();
+    res.status(201).json({ message: "User Registered Successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-// API endpoint for login
-app.post('/login', async (req, res) => {
-  console.log("Incoming request body:", req.body); // Debugging log
-
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    console.error("Missing email or password in request body");
-    return res.status(400).json({ message: 'Email and password are required' });
+// Multer storage settings for better file handling
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Save to 'uploads' folder
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname); // Unique file name
   }
+});
 
+const upload = multer({ storage });
+
+// Profile Picture Upload & Update Route
+app.put('/profile', upload.single('profilePic'), async (req, res) => {
   try {
-    const user = await User.findOne({ email });
+    const { email, firstName, lastName, phone, dob, gender, country, state } = req.body;
+    
+    if (!email) return res.status(400).json({ error: "Email is required" });
 
-    if (!user || !user.password) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+    const updateData = { firstName, lastName, phone, dob, gender, country, state };
+
+    if (req.file) {
+      updateData.profilePic = `/uploads/${req.file.filename}`;
     }
 
-    console.log("Stored password hash:", user.password); // Debugging log
-    console.log("Entered password:", password); // Debugging log
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updatedUser) return res.status(404).json({ error: "User not found" });
+
+    res.json({ message: "Profile updated successfully!", profilePic: updateData.profilePic });
+  } catch (error) {
+    res.status(500).json({ error: "Error updating profile" });
+  }
+});
+
+
+// User Login
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    
+    if (!user) return res.status(400).json({ error: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token, user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get User Profile
+app.get('/profile', async (req, res) => {
+  try {
+    const { email } = req.query;
+    console.log("Received email:", email); // Debugging
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
     }
 
-    res.status(200).json({ message: 'Login successful' });
-  } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ message: 'Internal server error' });
+    // Ensure case-insensitive search
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 
-
-// API endpoint for password reset request
+// Password Reset Request
 app.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: 'Please enter your email' });
-  }
-
   try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Please enter your email' });
+
     const user = await User.findOne({ email });
 
-    // Send generic response to avoid revealing user existence
     if (!user) {
-      return res.status(200).json({
-        message: 'If this email exists in our system, a reset link has been sent.',
-      });
+      return res.status(200).json({ message: 'If this email exists, a reset link has been sent.' });
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetPasswordExpires = Date.now() + 3600000; // 1 hour
-
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = resetPasswordExpires;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // Nodemailer setup for sending email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER, // Your Gmail address (stored in .env)
-        pass: process.env.EMAIL_PASS, // Your App Password (stored in .env)
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
     const mailOptions = {
-      from: process.env.EMAIL_USER, // Your Gmail address
-      to: user.email, // User's email address
+      from: process.env.EMAIL_USER,
+      to: user.email,
       subject: 'Password Reset Request',
-      text: `You requested a password reset. Click the link below to reset your password:\n\nhttp://localhost:5000/reset-password?token=${resetToken}\n\nIf you did not request this, please ignore this email.`,
+      text: `Reset your password using this link: http://localhost:5000/reset-password?token=${resetToken}`,
     };
 
-    // Sending the email
     transporter.sendMail(mailOptions, (error) => {
-      if (error) {
-        console.error("Error sending email:", error);
-        return res.status(500).json({ message: 'Error sending email' });
-      }
-      res.status(200).json({
-        message: 'If this email exists in our system, a reset link has been sent.',
-      });
-    });
+      if (error) return res.status(500).json({ message: 'Error sending email' });
 
+      res.status(200).json({ message: 'Reset link sent if email exists.' });
+    });
   } catch (error) {
-    console.error("Error during forgot-password:", error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// API endpoint to display the password reset form (GET)
-app.get('/reset-password', async (req, res) => {
-  const { token } = req.query;
-
-  if (!token) {
-    return res.status(400).json({ message: 'Token is required' });
-  }
-
-  try {
-    // Find the user by reset token and check if the token is valid
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }, // Check if the token is still valid
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: 'Password reset token is invalid or has expired' });
-    }
-
-    // Send a response or render a form for the user to reset their password
-    res.status(200).json({
-      message: 'Please provide a new password.',
-      token, // You can pass the token to be used in the reset password form
-    });
-  } catch (error) {
-    console.error("Error during reset-password GET:", error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-// API endpoint to handle password reset (POST)
+// Reset Password
 app.post('/reset-password', async (req, res) => {
-  const { token, newPassword } = req.body;
-
-  if (!token || !newPassword) {
-    return res.status(400).json({ message: 'Token and new password are required' });
-  }
-
   try {
-    // Find the user by reset token and check if the token is valid
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }, // Check if the token is still valid
-    });
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ message: 'Token and new password are required' });
 
-    if (!user) {
-      return res.status(400).json({ message: 'Password reset token is invalid or has expired' });
-    }
+    const user = await User.findOne({ resetPasswordToken: token, resetPasswordExpires: { $gt: Date.now() } });
 
-    // Hash the new password and save it
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
 
-    user.password = hashedPassword;
+    user.password = await bcrypt.hash(newPassword, 10);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
 
     await user.save();
-
-    res.status(200).json({ message: 'Password has been reset successfully' });
+    res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
-    console.error("Error during reset-password POST:", error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Get all transactions
-app.get('/transactions', async (req, res) => {
+const transactionSchema = new mongoose.Schema({
+  amount: Number,
+  category: String,
+  date: Date,
+  description: String,
+});
+
+const Transaction = mongoose.model("Transaction", transactionSchema);
+
+app.get("/transactions", async (req, res) => {
+  
   try {
-    const transactions = await Transaction.find();
-    res.json(transactions);
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching transactions' });
+    const transactions = await Transaction.find(); // Fetch from DB
+    res.json(transactions); // Send JSON response
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Start the server
+// Start Server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

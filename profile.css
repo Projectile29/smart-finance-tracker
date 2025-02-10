@@ -208,6 +208,41 @@ main {
     background-color: #0056b3;
 }
 
+.container {
+    position: relative; 
+    width: 100%;
+    padding: 20px;
+}
+
+.save-btn {
+    background: linear-gradient(45deg, #e53935, #d32f2f); /* Red gradient */
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    left: 455px; /* Aligns the button to the right inside the div */
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.save-btn:hover {
+    background: linear-gradient(45deg, #d32f2f, #b71c1c);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.save-btn:active {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+
+
+  
 /* Media Queries for Responsiveness */
 @media (max-width: 1024px) {
     .profile-details {

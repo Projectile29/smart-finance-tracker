@@ -8,96 +8,144 @@
     <link rel="stylesheet" href="profile.css">
 </head>
 <body>
-    <!-- Header Section -->
+
     <header class="header">
         <h2>Smart Finance Tracker</h2>
-       
         <div class="header-right">
-            <a href="./dashboard.html"><img src="assets/home-icon.png" alt="home" class="icon search"></a>
-            <img src="assets/notification-icon.png" alt="Notifications" class="icon notification">
-            
+            <a href="./dashboard.html"><img src="assets/home-icon.png" alt="home" class="icon"></a>
+            <img src="assets/notification-icon.png" alt="Notifications" class="icon">
         </div>
     </header>
 
     <main>
-        <!-- Sidebar -->
         <aside class="sidebar">
             <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
             <a href="./budget.html"><button class="nav-btn">Budget</button></a>
             <button class="nav-btn">Reports</button>
-            <button class="nav-btn">Goals</button>
+            <a href="./goals.html"><button class="nav-btn">Goals</button></a>
         </aside>
 
-        <!-- Profile Content -->
         <section class="content">
             <div class="profile">
                 <div class="profile-header">
                     <div class="profile-pic-container">
-                        <label for="profile-pic" style="cursor: pointer;">
+                        <label for="profile-pic">
                             <img src="https://via.placeholder.com/150" alt="Profile Picture" id="profile-img">
                         </label>
-                        <input type="file" id="profile-pic" style="display: none;" accept="image/*" onchange="loadProfilePicture(event)">
+                        <input type="file" id="profile-pic" style="display: none;" accept="image/*">
                     </div>
-                    <h2>Bliss Fernandes</h2>
+                    <h2 id="user-name">Loading...</h2>
                 </div>
                 <div class="profile-details">
-                    <div>
-                        <label for="first-name">First Name:</label>
-                        <input type="text" id="first-name" value="Bliss" disabled>
+                    <label>First Name: <input type="text" id="first-name"></label>
+                    <label>Last Name: <input type="text" id="last-name"></label>
+                    <label>Email: <input type="email" id="email" disabled></label>
+                    <label>Phone No: <input type="tel" id="phone"></label>
+                    <label>DOB: <input type="date" id="dob"></label>
+                    <label>Gender: <input type="text" id="gender"></label>
+                    <label>Country: <input type="text" id="country"></label>
+                    <label>State: <input type="text" id="state"></label>
+                    <div class="container">
+                        <button class="save-btn" onclick="saveProfile()">Save</button>
                     </div>
-                    <div>
-                        <label for="last-name">Last Name:</label>
-                        <input type="text" id="last-name" value="Fernandes" disabled>
-                    </div>
-                    <div>
-                        <label for="email">Email:</label>
-                        <input type="email" id="email" value="blissfernandes@gmail.com" disabled>
-                    </div>
-                    <div>
-                        <label for="phone">Phone No:</label>
-                        <input type="tel" id="phone" value="234567897654" disabled>
-                    </div>
-                    <div>
-                        <label for="dob">DOB:</label>
-                        <input type="date" id="dob" value="2003-04-03" disabled>
-                    </div>
-                    <div>
-                        <label for="gender">Gender:</label>
-                        <input type="text" id="gender" value="Male" disabled>
-                    </div>
-                    <div>
-                        <label for="country">Country:</label>
-                        <input type="text" id="country" value="India" disabled>
-                    </div>
-                    <div>
-                        <label for="state">State:</label>
-                        <input type="text" id="state" value="Goa" disabled>
-                    </div>
-                </div>
-                <div class="action-buttons">
-                    <button onclick="enableEdit()">Edit Profile</button>
-                    <button onclick="saveProfile()">Save</button>
-                </div>
-            </div>
+                    
         </section>
     </main>
 
     <script>
-        function enableEdit() {
-            const inputs = document.querySelectorAll('.profile-details input');
-            inputs.forEach(input => input.disabled = false);
+        // ✅ Retrieve userEmail properly
+const userEmail = localStorage.getItem("userEmail") || sessionStorage.getItem("userEmail");
+
+if (!userEmail) {
+    alert("User not logged in. Redirecting to login page...");
+    window.location.href = "login.html";  // Redirect to login page
+} else {
+    console.log("Fetching profile for:", userEmail);
+    fetchProfile();
+}
+
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch(`http://localhost:5000/profile?email=${encodeURIComponent(userEmail.toLowerCase())}`);
+                const data = await response.json();
+
+                if (!data || data.error) {
+                    console.error("Profile fetch error:", data.error);
+                    return;
+                }
+
+                document.getElementById('user-name').innerText = `${data.firstName || ""} ${data.lastName || ""}`;
+                document.getElementById('first-name').value = data.firstName || "";
+                document.getElementById('last-name').value = data.lastName || "";
+                document.getElementById('email').value = data.email || "";
+                document.getElementById('phone').value = data.phone || "";
+
+                // ✅ Fix for Date Format Issue
+                if (data.dob) {
+                    document.getElementById('dob').value = new Date(data.dob).toISOString().split('T')[0];
+                } else {
+                    document.getElementById('dob').value = "";
+                }
+
+                document.getElementById('gender').value = data.gender || "";
+                document.getElementById('country').value = data.country || "";
+                document.getElementById('state').value = data.state || "";
+                document.getElementById('profile-img').src = data.profilePic || "https://via.placeholder.com/150";
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+            }
         }
 
-        function saveProfile() {
-            const inputs = document.querySelectorAll('.profile-details input');
-            inputs.forEach(input => input.disabled = true);
-            alert('Profile saved successfully!');
+        async function saveProfile() {
+    const fileInput = document.getElementById('profile-pic');
+    const file = fileInput.files[0];  // Get selected file
+
+    const formData = new FormData();
+    formData.append('email', userEmail);  // User email
+    formData.append('firstName', document.getElementById('first-name').value);
+    formData.append('lastName', document.getElementById('last-name').value);
+    formData.append('phone', document.getElementById('phone').value);
+    formData.append('dob', document.getElementById('dob').value);
+    formData.append('gender', document.getElementById('gender').value);
+    formData.append('country', document.getElementById('country').value);
+    formData.append('state', document.getElementById('state').value);
+
+    if (file) {
+        formData.append('profilePic', file);  // Append file if selected
+    }
+
+    try {
+        const response = await fetch('http://localhost:5000/profile', {
+            method: 'PUT',
+            body: formData  // Send FormData instead of JSON
+        });
+
+        if (response.ok) {
+            alert('Profile updated successfully!');
+        } else {
+            alert('Failed to update profile.');
         }
 
-        function loadProfilePicture(event) {
-            const img = document.getElementById('profile-img');
-            img.src = URL.createObjectURL(event.target.files[0]);
-        }
+    } catch (error) {
+        console.error("Save error:", error);
+    }
+}
+
+
+        document.getElementById('profile-pic').addEventListener('change', function(event) {
+    const file = event.target.files[0];  
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profile-img').src = e.target.result;  // Show preview
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
     </script>
+
 </body>
 </html>
