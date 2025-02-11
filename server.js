@@ -219,6 +219,10 @@ app.post('/reset-password', async (req, res) => {
   }
 });
 
+app.get('/reset-password', (req, res) => {
+  res.sendFile(__dirname + '/reset-password.html'); // Serve an HTML form for resetting the password
+});
+
 const transactionSchema = new mongoose.Schema({
   amount: Number,
   category: String,
