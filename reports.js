@@ -1,67 +1,30 @@
 document.addEventListener("DOMContentLoaded", function () {
-    fetchTransactionData();
-});
+    // Sidebar navigation buttons
+    const navButtons = document.querySelectorAll(".nav-btn");
+    
+    navButtons.forEach(button => {
+        button.addEventListener("click", function () {
+            // Remove active class from all buttons
+            navButtons.forEach(btn => btn.classList.remove("active"));
+            // Add active class to the clicked button
+            this.classList.add("active");
 
-async function fetchTransactionData() {
-    try {
-        const response = await fetch("transactions.json"); // Update with actual data source
-        const transactions = await response.json();
-        processTransactionData(transactions);
-    } catch (error) {
-        console.error("Error fetching transactions:", error);
-    }
-}
+            // Update the content section based on button clicked
+            const sectionTitle = document.querySelector(".section-title");
+            sectionTitle.textContent = this.textContent + " Reports";
+        });
+    });
 
-function processTransactionData(transactions) {
-    let weeklyData = Array(4).fill(0).map(() => ({ debit: 0, credit: 0 }));
+    // Handle report generation
+    document.querySelector(".btn-red").addEventListener("click", function () {
+        const fromDate = document.getElementById("from-date").value;
+        const toDate = document.getElementById("to-date").value;
 
-    transactions.forEach(txn => {
-        let weekIndex = Math.floor(new Date(txn.date).getDate() / 7);
-        if (txn.type === "debit") {
-            weeklyData[weekIndex].debit += txn.amount;
+        if (fromDate && toDate) {
+            alert(`Generating report from ${fromDate} to ${toDate}`);
+            // Here, you could generate a PDF, fetch report data, etc.
         } else {
-            weeklyData[weekIndex].credit += txn.amount;
+            alert("Please select both From and To dates.");
         }
     });
-
-    renderGraphs(weeklyData);
-}
-
-function renderGraphs(weeklyData) {
-    new Chart(document.getElementById("debitChart"), {
-        type: "bar",
-        data: {
-            labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-            datasets: [{
-                label: "Debit",
-                data: weeklyData.map(w => w.debit),
-                backgroundColor: "red"
-            }]
-        }
-    });
-
-    new Chart(document.getElementById("creditChart"), {
-        type: "bar",
-        data: {
-            labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-            datasets: [{
-                label: "Credit",
-                data: weeklyData.map(w => w.credit),
-                backgroundColor: "green"
-            }]
-        }
-    });
-}
-
-function downloadReport() {
-    const doc = new jsPDF();
-    doc.text("Monthly Financial Report", 10, 10);
-
-    const debitCanvas = document.getElementById("debitChart");
-    const creditCanvas = document.getElementById("creditChart");
-
-    doc.addImage(debitCanvas.toDataURL("image/png"), "PNG", 10, 20, 90, 60);
-    doc.addImage(creditCanvas.toDataURL("image/png"), "PNG", 10, 90, 90, 60);
-
-    doc.save("Monthly_Report.pdf");
-}
+});

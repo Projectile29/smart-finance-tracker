@@ -6,15 +6,13 @@
   <title>Reports</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
   <link rel="stylesheet" href="reports.css">
-  <!-- Font Awesome for Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script defer src="reports.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <!-- Header Section -->
     <header class="header">
-        <h2>Smart Finance Tracker</h2>
-        
+        <h2 class="title">Smart Finance Tracker</h2>
         <div class="header-right">
             <a href="./dashboard.html"><img src="assets/home-icon.png" alt="home" class="icon search"></a>
             <img src="assets/notification-icon.png" alt="Notifications" class="icon notification">
@@ -27,18 +25,18 @@
         <aside class="sidebar">
             <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
             <a href="./budget.html"><button class="nav-btn">Budget</button></a>
-            <button class="nav-btn">Reports</button>
+            <button class="nav-btn active">Reports</button>
             <a href="./goals.html"><button class="nav-btn">Goals</button></a>
         </aside>
 
         <!-- Content Section -->
         <section class="content">
-            <h2>Reports</h2>
+            <h2 class="section-title">Reports</h2>
 
             <!-- Graphs Section -->
             <div class="graphs">
-                <canvas id="debitChart"></canvas>
-                <canvas id="creditChart"></canvas>
+                <img src="assets/graph1.png" alt="Graph 1" class="graph-img">
+                <img src="assets/graph2.png" alt="Graph 2" class="graph-img">
             </div>
 
             <!-- Expense and Income Reports -->
@@ -47,20 +45,29 @@
                     <h3>Expense Report</h3>
                     <form>
                         <label>Total Expenses:</label>
-                        <input type="text" id="totalExpenses" readonly>
+                        <input type="text" value="₹1500" readonly>
+                        <label>Groceries:</label>
+                        <input type="text" value="₹300" readonly>
+                        <label>Rent:</label>
+                        <input type="text" value="₹1200" readonly>
                     </form>
                 </div>
+
                 <div class="report-card">
                     <h3>Income Report</h3>
                     <form>
                         <label>Total Income:</label>
-                        <input type="text" id="totalIncome" readonly>
+                        <input type="text" value="₹1500" readonly>
+                        <label>Groceries:</label>
+                        <input type="text" value="₹300" readonly>
+                        <label>Rent:</label>
+                        <input type="text" value="₹1200" readonly>
                     </form>
                 </div>
             </div>
 
             <!-- Download Button -->
-            <button class="btn-red" onclick="downloadReport()">Download Report</button>
+            <button class="btn-red">Download Report</button>
         </section>
     </main>
 </body>
