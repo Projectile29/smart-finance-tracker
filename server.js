@@ -31,7 +31,7 @@ app.use(limiter);
 app.use('/uploads', express.static('uploads'));
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URI) // Removed deprecated options
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB connection error:", err));
 
@@ -217,6 +217,10 @@ app.post('/reset-password', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Internal server error' });
   }
+});
+
+app.get('/reset-password', (req, res) => {
+  res.sendFile(__dirname + '/reset-password.html'); // Serve an HTML form for resetting the password
 });
 
 const transactionSchema = new mongoose.Schema({
