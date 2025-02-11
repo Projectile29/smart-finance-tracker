@@ -7,46 +7,50 @@
     <link rel="stylesheet" href="budget.css">
 </head>
 <body>
-    <header>
-        <div class="logo">Smart Finance Tracker</div>
-        <div class="header-icons">
-            <button class="icon-btn">🏠</button>
-            <button class="icon-btn">🔔</button>
-            <button class="icon-btn">👤</button>
+    <header class="header">
+        <h2>Smart Finance Tracker</h2>
+        <div class="header-right">
+            <a href="./dashboard.html"><img src="assets/home-icon.png" alt="home" class="icon"></a>
+            <img src="assets/notification-icon.png" alt="Notifications" class="icon">
+            <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon"></a>
         </div>
     </header>
 
-    <div class="container">
+    <main class="container">
+        <!-- Sidebar -->
         <aside class="sidebar">
-            <a href="./expense.html"><div class="menu-item">Expenses</div></a>
-            <a href="./budget.html"><div class="menu-item active">Budget</div></a>
-            <div class="menu-item">Reports</div>
-            <a href="./goals.html"><div class="menu-item">Goals</div></a>
+            <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
+            <a href="./budget.html"><button class="nav-btn active">Budget</button></a>
+            <button class="nav-btn">Reports</button>
+            <a href="./goals.html"><button class="nav-btn">Goals</button></a>
         </aside>
 
-        <main class="main-content">
+        <!-- Main Content -->
+        <section class="main-content">
             <div class="budget-header">
                 <h2>Budget</h2>
                 <button class="add-btn">+</button>
             </div>
 
+            <!-- Budget Overview Card -->
             <div class="card budget-overview">
                 <div class="card-header">
-                    <h3>Budget Overview:</h3>
+                    <h3>Budget Overview</h3>
                     <button class="edit-btn">✏️</button>
                 </div>
                 <div class="budget-fields">
                     <div class="field">
                         <label>Total Budget:</label>
-                        <input type="text" value="₹2000" readonly>
+                        <input type="text" id="total-budget" value="₹2000" readonly>
                     </div>
                     <div class="field">
                         <label>Remaining Budget:</label>
-                        <input type="text" value="₹750" readonly>
+                        <input type="text" id="remaining-budget" value="₹750" readonly>
                     </div>
                 </div>
             </div>
 
+            <!-- Category Details -->
             <div class="card category-details">
                 <div class="card-header">
                     <h3>Category</h3>
@@ -83,8 +87,8 @@
                     </tbody>
                 </table>
             </div>
-        </main>
-    </div>
+        </section>
+    </main>
 
     <script src="budget.js"></script>
 </body>
