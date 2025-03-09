@@ -1,16 +1,21 @@
+/* Reset Styles */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-}
-
-body {
+  }
+  
+  /* General Body Styling */
+  body {
+    font-family: 'Roboto', sans-serif;
     background-color: #f5f5f5;
-    min-height: 100vh;
-}
-
-header {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Header Styling */
+  .header {
     background-color: white;
     padding: 30px 20px;
     display: flex;
@@ -22,34 +27,65 @@ header {
     z-index: 1000;
     width: 100%;
     height:100px
-}
-
-.logo {
-    color: #0066ff;
-    font-size: 1.5rem;
-    font-weight: 500;
-}
-
-.header-icons {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.icon-btn {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
+  }
+  
+  .header h2 {
+    font-size: 2rem;
+    color: #5071FF;
     cursor: pointer;
-}
-
-.container {
+  }
+  
+  /* Ensure that the tabs are centered */
+  .tabs {
     display: flex;
+    gap: 10px;
+    padding: 10px;
+    background-color: #6485FF;
+    border-radius: 15px;
+    justify-content: center;
+  }
+  
+  .header-right {
+    display: flex;
+    align-items: center;
     gap: 30px;
-    padding: 2rem;
-    height: calc(100vh - 70px);
-}
-
-.sidebar {
+    justify-content: center;
+    margin-right: 30px;
+  }
+  
+  /* Icon styling */
+  .header-right .icon {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+  }
+  
+  /* Tab Button Styling */
+  .tab-btn {
+    background-color: #6485FF;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 15px;
+    cursor: pointer;
+  }
+  
+  .tab-btn.active {
+    background-color: #2D3F8E;
+    color: white;
+  }
+  
+  /* Main Layout Styling */
+  main {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    height: calc(100vh - 60px);
+    background-color: #fff;
+  }
+  
+  /* Sidebar Styling */
+  .sidebar {
     width: 20%;
     background-color: #007AFF;
     color: white;
@@ -59,112 +95,134 @@ header {
     border-radius: 21px;
     gap: 25px;
     margin: 20px;
-}
-
-.menu-item {
+  }
+  
+  /* Button Styling Inside Sidebar */
+  .sidebar button {
     background-color: white;
-    color: black;
-    padding: 1rem;
-    border-radius: 0.5rem;
+    color: #000000;
+    border: none;
+    padding: 20px;
+    font-size: 1.4rem;
+    border-radius: 20px;
     cursor: pointer;
-    text-align: center;
-    font-weight: 500;
-}
-
-.menu-item.active {
-    background-color: transparent;
+    font-weight: bold;
+    width: 100%;
+  }
+  
+  .sidebar button:hover {
+    background-color: #0056b3;
     color: white;
-}
+  }
 
-.main-content {
+/* ===== Budget Section Styles ===== */
+.budget-section {
+    padding: 20px;
     flex: 1;
 }
 
-.budget-header {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-bottom: 1rem;
+h2 {
+    margin-bottom: 10px;
 }
 
 .add-btn {
-    background-color: #0066ff;
+    padding: 8px 16px;
+    background-color: #00438a;
     color: white;
     border: none;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    font-size: 1.5rem;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin-bottom: 10px;
+    border-radius: 4px;
 }
 
-.card {
-    background-color: white;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.edit-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #0066ff;
-}
-
-.budget-fields {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-}
-
-.field {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.field label {
-    color: #333;
-    font-weight: 500;
-}
-
-.field input {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 0.25rem;
-    width: 150px;
-}
-
+/* ===== Table Styles ===== */
 table {
     width: 100%;
+    margin-top: 10px;
     border-collapse: collapse;
-    margin-top: 1rem;
+    background-color: #fff;
 }
 
 th, td {
-    padding: 1rem;
+    border: 1px solid #ddd;
+    padding: 10px;
     text-align: left;
-    border-bottom: 1px solid #eee;
 }
 
 th {
-    color: #333;
-    font-weight: 500;
+    background-color: #007bff;
+    color: white;
 }
 
-td {
-    color: #666;
+/* ===== Edit Icon Style ===== */
+.edit-icon, .delete-icon {
+    cursor: pointer;
+    font-size: 18px;
+    margin-right: 10px;
+}
+
+.edit-icon { color: #000000; }
+.delete-icon { color: #000000; }
+
+/* ===== Popups - Common ===== */
+.popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 10;
+    padding: 20px;
+    border-radius: 10px;
+    min-width: 300px;
+}
+
+.popup-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ===== Popup Close Button ===== */
+.close {
+    align-self: flex-end;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* ===== Form Inputs inside Popup ===== */
+.popup input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.popup button {
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* ===== Budget Overview Box ===== */
+.budget-overview {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f0f8ff;
+    border: 1px solid #007bff;
+    border-radius: 8px;
+}
+
+.budget-overview h3 {
+    margin: 0 0 10px 0;
+}
+
+.budget-overview p {
+    margin: 5px 0;
+    font-weight: bold;
 }
