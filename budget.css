@@ -1,18 +1,21 @@
-/* General Styles */
+/* Reset Styles */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', sans-serif;
-}
-
-body {
+  }
+  
+  /* General Body Styling */
+  body {
+    font-family: 'Roboto', sans-serif;
     background-color: #f5f5f5;
-    min-height: 100vh;
-}
-
-/* Header */
-.header {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Header Styling */
+  .header {
     background-color: white;
     padding: 30px 20px;
     display: flex;
@@ -24,44 +27,65 @@ body {
     z-index: 1000;
     width: 100%;
     height:100px
-}
-
-.header h2 {
+  }
+  
+  .header h2 {
     font-size: 2rem;
     color: #5071FF;
     cursor: pointer;
-}
-
-.header-right {
+  }
+  
+  /* Ensure that the tabs are centered */
+  .tabs {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background-color: #6485FF;
+    border-radius: 15px;
+    justify-content: center;
+  }
+  
+  .header-right {
     display: flex;
     align-items: center;
     gap: 30px;
     justify-content: center;
     margin-right: 30px;
-}
-
-/* Icons */
-.icon {
+  }
+  
+  /* Icon styling */
+  .header-right .icon {
     width: 30px;
     height: 30px;
     cursor: pointer;
-}
-
-/* Layout */
-.container {
-    display: flex;
-    padding: 20px;
-    gap: 20px;
-}
-main {
+  }
+  
+  /* Tab Button Styling */
+  .tab-btn {
+    background-color: #6485FF;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 15px;
+    cursor: pointer;
+  }
+  
+  .tab-btn.active {
+    background-color: #2D3F8E;
+    color: white;
+  }
+  
+  /* Main Layout Styling */
+  main {
     display: flex;
     flex: 1;
     width: 100%;
     height: calc(100vh - 60px);
     background-color: #fff;
-}
-/* Sidebar */
-.sidebar {
+  }
+  
+  /* Sidebar Styling */
+  .sidebar {
     width: 20%;
     background-color: #007AFF;
     color: white;
@@ -71,112 +95,134 @@ main {
     border-radius: 21px;
     gap: 25px;
     margin: 20px;
-}
-
-.sidebar .nav-btn {
+  }
+  
+  /* Button Styling Inside Sidebar */
+  .sidebar button {
     background-color: white;
-    color: black;
+    color: #000000;
     border: none;
-    padding: 15px;
-    font-size: 1.2rem;
-    border-radius: 8px;
+    padding: 20px;
+    font-size: 1.4rem;
+    border-radius: 20px;
     cursor: pointer;
     font-weight: bold;
     width: 100%;
-    text-align: left;
-}
-
-.sidebar .nav-btn:hover, .sidebar .nav-btn.active {
+  }
+  
+  .sidebar button:hover {
     background-color: #0056b3;
     color: white;
-}
+  }
 
-/* Main Content */
-.main-content {
+/* ===== Budget Section Styles ===== */
+.budget-section {
+    padding: 20px;
     flex: 1;
 }
 
-/* Budget Header */
-.budget-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+h2 {
+    margin-bottom: 10px;
 }
 
 .add-btn {
-    background-color: #0066ff;
+    padding: 8px 16px;
+    background-color: #00438a;
     color: white;
     border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    font-size: 1.5rem;
     cursor: pointer;
+    margin-bottom: 10px;
+    border-radius: 4px;
 }
 
-/* Cards */
-.card {
-    background-color: white;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    
-}
-
-.edit-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #0066ff;
-}
-
-/* Budget Fields */
-.budget-fields {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-.field {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.field label {
-    font-weight: 500;
-}
-
-.field input {
-    padding: 5px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    width: 100px;
-}
-
-/* Table */
+/* ===== Table Styles ===== */
 table {
     width: 100%;
-    border-collapse: collapse;
     margin-top: 10px;
+    border-collapse: collapse;
+    background-color: #fff;
 }
 
 th, td {
+    border: 1px solid #ddd;
     padding: 10px;
     text-align: left;
-    border-bottom: 1px solid #ddd;
 }
 
 th {
+    background-color: #007bff;
+    color: white;
+}
+
+/* ===== Edit Icon Style ===== */
+.edit-icon, .delete-icon {
+    cursor: pointer;
+    font-size: 18px;
+    margin-right: 10px;
+}
+
+.edit-icon { color: #000000; }
+.delete-icon { color: #000000; }
+
+/* ===== Popups - Common ===== */
+.popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 10;
+    padding: 20px;
+    border-radius: 10px;
+    min-width: 300px;
+}
+
+.popup-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ===== Popup Close Button ===== */
+.close {
+    align-self: flex-end;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* ===== Form Inputs inside Popup ===== */
+.popup input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.popup button {
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* ===== Budget Overview Box ===== */
+.budget-overview {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f0f8ff;
+    border: 1px solid #007bff;
+    border-radius: 8px;
+}
+
+.budget-overview h3 {
+    margin: 0 0 10px 0;
+}
+
+.budget-overview p {
+    margin: 5px 0;
     font-weight: bold;
 }
