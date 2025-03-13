@@ -1,13 +1,12 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const { faker } = require('@faker-js/faker');
-const schedule = require('node-schedule');
 const Transaction = require('./Transaction');
 
 // Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ Error:', err));
+  .catch(err => console.error('❌ Connection error:', err));
 
 // Function to generate a unique Transaction ID
 function generateTransactionId() {
@@ -18,41 +17,29 @@ function generateTransactionId() {
 function generateTransaction() {
   return {
     transactionId: generateTransactionId(),
-    date: faker.date.recent(),
+    date: new Date(), // Current timestamp
     amount: faker.finance.amount(10, 1000, 2), // Random amount
-    category: faker.helpers.arrayElement(["Food", "Transport", "Entertainment", "Shopping", "Healthcare", "Bills"]),
+    category: faker.helpers.arrayElement(["Food", "Transport", "Entertainment", "Shopping"]),
     description: faker.lorem.sentence()
   };
 }
 
-// Insert multiple fake transactions into MongoDB
-const insertFakeData = async () => {
-  try {
-    const fakeTransactions = Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, generateTransaction);
-    await Transaction.insertMany(fakeTransactions);
-    console.log(`✅ ${fakeTransactions.length} fake transactions inserted successfully!`);
-  } catch (error) {
-    console.error('❌ Error inserting transactions:', error);
-  }
-};
-
-// Function to schedule transactions at random times
+// Function to generate transactions at random times
 function scheduleRandomTransactions() {
-  const totalRuns = faker.number.int({ min: 5, max: 10 }); // Number of times it'll run in a day
+  const randomInterval = Math.floor(Math.random() * (60 - 5 + 1) + 5) * 60 * 1000; // Min 5 mins, Max 60 mins
+  console.log(`⏳ Next transaction in ${randomInterval / 60000} minutes`);
 
-  for (let i = 0; i < totalRuns; i++) {
-    const randomHour = faker.number.int({ min: 0, max: 23 });
-    const randomMinute = faker.number.int({ min: 0, max: 59 });
-
-    const jobTime = `${randomMinute} ${randomHour} * * *`; // CRON format
-    schedule.scheduleJob(jobTime, () => {
-      console.log(`⏰ Running at ${randomHour}:${randomMinute}`);
-      insertFakeData();
-    });
-
-    console.log(`📅 Scheduled for ${randomHour}:${randomMinute}`);
-  }
+  setTimeout(async () => {
+    try {
+      const transaction = generateTransaction();
+      await Transaction.create(transaction);
+      console.log('✅ Transaction inserted:', transaction);
+    } catch (error) {
+      console.error('❌ Error inserting transaction:', error);
+    }
+    scheduleRandomTransactions(); // Schedule the next one
+  }, randomInterval);
 }
 
-// Schedule transactions for today
+// Start generating transactions when the script runs
 scheduleRandomTransactions();
