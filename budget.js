@@ -82,3 +82,52 @@ function updateTable() {
 }
 
 document.addEventListener('DOMContentLoaded', updateTable);
+
+// Function to Toggle Notification Panel
+function toggleNotifications() {
+    let panel = document.getElementById("notificationPanel");
+    panel.classList.toggle("show-panel");
+}
+
+// Hide Panel When Clicking Outside
+document.addEventListener("click", function (event) {
+    let panel = document.getElementById("notificationPanel");
+    let bell = document.querySelector(".notification-bell");
+
+    if (!panel.contains(event.target) && !bell.contains(event.target)) {
+        panel.classList.remove("show-panel");
+    }
+});
+
+// Load Notifications from Local Storage
+function loadNotifications() {
+    let notificationList = document.getElementById("notificationList");
+    notificationList.innerHTML = ""; // Clear current list
+
+    let notifications = JSON.parse(localStorage.getItem("notifications")) || [];
+
+    notifications.forEach((notification) => {
+        let newItem = document.createElement("li");
+        newItem.textContent = notification;
+        notificationList.appendChild(newItem);
+    });
+}
+
+// Function to Add a New Notification
+function addNotification(message) {
+    let notifications = JSON.parse(localStorage.getItem("notifications")) || [];
+
+    notifications.push(message); // Add new message
+    localStorage.setItem("notifications", JSON.stringify(notifications)); // Save to storage
+
+    loadNotifications(); // Refresh list
+}
+
+// Function to Clear All Notifications
+function clearNotifications() {
+    localStorage.removeItem("notifications"); // Remove from storage
+    loadNotifications(); // Refresh list
+}
+
+// Load Notifications When Page Loads
+document.addEventListener("DOMContentLoaded", loadNotifications);

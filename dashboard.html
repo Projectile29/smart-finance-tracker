@@ -20,9 +20,19 @@
             <button class="tab-btn">Today <i class="calendar-icon"></i></button>
         </div>
         <div class="header-right">
-            <img src="assets/notification-icon.png" alt="Notifications" class="icon notification">
+             <!-- Notification Bell Icon (Add inside header) -->
+<img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
+
             <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon profile"></a>
         </div>
+        <!-- Notification Popup Panel -->
+<div id="notificationPanel" class="notification-panel">
+    <h3>Notifications</h3>
+    <ul id="notificationList">
+        <!-- Notifications will be dynamically added -->
+    </ul>
+    <button onclick="clearNotifications()">Clear All</button>
+</div>
     </header>
 
     <main>

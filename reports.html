@@ -15,9 +15,19 @@
         <h2 class="title">Smart Finance Tracker</h2>
         <div class="header-right">
             <a href="./dashboard.html"><img src="assets/home-icon.png" alt="home" class="icon search"></a>
-            <img src="assets/notification-icon.png" alt="Notifications" class="icon notification">
+             <!-- Notification Bell Icon (Add inside header) -->
+<img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
+
             <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon profile"></a>
         </div>
+        <!-- Notification Popup Panel -->
+<div id="notificationPanel" class="notification-panel">
+    <h3>Notifications</h3>
+    <ul id="notificationList">
+        <!-- Notifications will be dynamically added -->
+    </ul>
+    <button onclick="clearNotifications()">Clear All</button>
+</div>
     </header>
 
     <main>
