@@ -35,6 +35,30 @@ body {
     cursor: pointer;
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Reduce gap between profile icon and logout button */
+    justify-content: center;
+    margin-right: 30px;
+}
+
+.logout-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    
+    position: relative;  
+    margin-left: 10px; /* Reduce spacing from profile icon */
+}
+
+
 /* Ensure that the tabs are centered */
 .tabs {
     display: flex;
@@ -260,3 +284,19 @@ main {
     display: block;
     opacity: 1;
   }
+
+  /* Hide all unnecessary scrollbars */
+body {
+    overflow: hidden; /* Prevents body from scrolling */
+}
+
+/* Allow scrolling inside only the main content */
+main {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Ensure dashboard content fits inside the available space */
+.dashboard {
+    overflow: auto;
+}

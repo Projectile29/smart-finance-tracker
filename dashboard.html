@@ -24,6 +24,8 @@
 <img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
 
             <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon profile"></a>
+            <button id="logout-btn" class="logout-btn">Logout</button>
+
         </div>
         <!-- Notification Popup Panel -->
 <div id="notificationPanel" class="notification-panel">
@@ -57,12 +59,12 @@
             </div>
             <div class="card" id="income-card">Income<br>₹<span id="income-amount"></span></div>
             <div class="card large">Monthly Tracking</div>
-            <div class="card large">Spendings</div>
+            <div class="card large">Spending</div>
         </section>
     </main>
 
     <!-- Tab Content Sections -->
-    <section class="content-section monthly" style="display: block;">
+    <section class="content-section monthly" style="display: none;">
         <p>Monthly Data</p>
     </section>
     <section class="content-section yearly" style="display: none;">

@@ -131,3 +131,16 @@ function clearNotifications() {
 
 // ✅ Load Notifications When Page Loads
 document.addEventListener("DOMContentLoaded", loadNotifications);
+
+function logoutUser() {
+  // Remove user data from storage
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("notifications");
+  sessionStorage.removeItem("userEmail"); 
+
+  // Redirect to login page
+  window.location.href = "login.html";  // Change this to your actual login page
+}
+
+// Attach logout function to a button
+document.getElementById("logout-btn").addEventListener("click", logoutUser);
