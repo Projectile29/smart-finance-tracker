@@ -8,25 +8,18 @@
     <link rel="stylesheet" href="profile.css">
 </head>
 <body>
-
     <header class="header">
         <h2>Smart Finance Tracker</h2>
         <div class="header-right">
             <a href="./dashboard.html"><img src="assets/home-icon.png" alt="home" class="icon"></a>
-             <!-- Notification Bell Icon (Add inside header) -->
-<img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
-
+            <img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
         </div>
-        <!-- Notification Popup Panel -->
-<div id="notificationPanel" class="notification-panel">
-    <h3>Notifications</h3>
-    <ul id="notificationList">
-        <!-- Notifications will be dynamically added -->
-    </ul>
-    <button onclick="clearNotifications()">Clear All</button>
-</div>
+        <div id="notificationPanel" class="notification-panel">
+            <h3>Notifications</h3>
+            <ul id="notificationList"></ul>
+            <button onclick="clearNotifications()">Clear All</button>
+        </div>
     </header>
-
     <main>
         <aside class="sidebar">
             <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
@@ -34,15 +27,14 @@
             <button class="nav-btn">Reports</button>
             <a href="./goals.html"><button class="nav-btn">Goals</button></a>
         </aside>
-
         <section class="content">
             <div class="profile">
                 <div class="profile-header">
                     <div class="profile-pic-container">
-                        <label for="profile-pic">
-                            <img src="https://via.placeholder.com/150" alt="Profile Picture" id="profile-img">
+                        <label for="profile-pic-input">
+                            <img src="https://via.placeholder.com/150" alt="Profile Picture" id="profile-pic">
                         </label>
-                        <input type="file" id="profile-pic" style="display: none;" accept="image/*">
+                        <input type="file" id="profile-pic-input" style="display: none;" accept="image/*">
                     </div>
                     <h2 id="user-name">Loading...</h2>
                 </div>
@@ -54,108 +46,19 @@
                     <label>DOB: <input type="date" id="dob"></label>
                     <label>Gender: <input type="text" id="gender"></label>
                     <label>Country: <input type="text" id="country"></label>
+                    
+                    <!-- New Fields Below Country -->
                     <label>State: <input type="text" id="state"></label>
+                    <label>Salary Amount: <input type="number" id="salary-amount" placeholder="Enter your salary"></label>
+                    <label>Salary Day: <input type="number" id="salary-day" placeholder="Day of the month"></label>
+                    
                     <div class="container">
                         <button class="save-btn" onclick="saveProfile()">Save</button>
                     </div>
-                    
+                </div>
+            </div>
         </section>
     </main>
-
-    <script>
-        // ✅ Retrieve userEmail properly
-const userEmail = localStorage.getItem("userEmail") || sessionStorage.getItem("userEmail");
-
-if (!userEmail) {
-    alert("User not logged in. Redirecting to login page...");
-    window.location.href = "login.html";  // Redirect to login page
-} else {
-    console.log("Fetching profile for:", userEmail);
-    fetchProfile();
-}
-
-
-        async function fetchProfile() {
-            try {
-                const response = await fetch(`http://localhost:5000/profile?email=${encodeURIComponent(userEmail.toLowerCase())}`);
-                const data = await response.json();
-
-                if (!data || data.error) {
-                    console.error("Profile fetch error:", data.error);
-                    return;
-                }
-
-                document.getElementById('user-name').innerText = `${data.firstName || ""} ${data.lastName || ""}`;
-                document.getElementById('first-name').value = data.firstName || "";
-                document.getElementById('last-name').value = data.lastName || "";
-                document.getElementById('email').value = data.email || "";
-                document.getElementById('phone').value = data.phone || "";
-
-                // ✅ Fix for Date Format Issue
-                if (data.dob) {
-                    document.getElementById('dob').value = new Date(data.dob).toISOString().split('T')[0];
-                } else {
-                    document.getElementById('dob').value = "";
-                }
-
-                document.getElementById('gender').value = data.gender || "";
-                document.getElementById('country').value = data.country || "";
-                document.getElementById('state').value = data.state || "";
-                document.getElementById('profile-img').src = data.profilePic || "https://via.placeholder.com/150";
-
-            } catch (error) {
-                console.error("Fetch error:", error);
-            }
-        }
-
-        async function saveProfile() {
-    const fileInput = document.getElementById('profile-pic');
-    const file = fileInput.files[0];  // Get selected file
-
-    const formData = new FormData();
-    formData.append('email', userEmail);  // User email
-    formData.append('firstName', document.getElementById('first-name').value);
-    formData.append('lastName', document.getElementById('last-name').value);
-    formData.append('phone', document.getElementById('phone').value);
-    formData.append('dob', document.getElementById('dob').value);
-    formData.append('gender', document.getElementById('gender').value);
-    formData.append('country', document.getElementById('country').value);
-    formData.append('state', document.getElementById('state').value);
-
-    if (file) {
-        formData.append('profilePic', file);  // Append file if selected
-    }
-
-    try {
-        const response = await fetch('http://localhost:5000/profile', {
-            method: 'PUT',
-            body: formData  // Send FormData instead of JSON
-        });
-
-        if (response.ok) {
-            alert('Profile updated successfully!');
-        } else {
-            alert('Failed to update profile.');
-        }
-
-    } catch (error) {
-        console.error("Save error:", error);
-    }
-}
-
-
-        document.getElementById('profile-pic').addEventListener('change', function(event) {
-    const file = event.target.files[0];  
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('profile-img').src = e.target.result;  // Show preview
-        };
-        reader.readAsDataURL(file);
-    }
-});
-
-    </script>
-
+    <script src="profile.js"></script>
 </body>
 </html>

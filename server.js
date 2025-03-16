@@ -10,6 +10,7 @@ const multer = require('multer');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
+
 require('dotenv').config();
 
 // Initialize Express app
@@ -18,7 +19,6 @@ const port = process.env.PORT || 5000;
 
 // Enable CORS
 app.use(cors());
-
 app.use(express.json());
 
 // Rate limiting to prevent abuse
@@ -49,9 +49,21 @@ const userSchema = new mongoose.Schema({
   profilePic: String,
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  salaryAmount: Number,   
+    salaryDay: Number       
 });
 
 const User = mongoose.model('User', userSchema);
+
+// Multer setup for profile picture uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const upload = multer({ storage });
+
+// Serve static images from "uploads" folder
+app.use('/uploads', express.static('uploads'));
 
 // User Registration
 app.post('/signup', async (req, res) => {
@@ -73,47 +85,6 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-// Multer storage settings for better file handling
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/'); // Save to 'uploads' folder
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname); // Unique file name
-  }
-});
-
-const upload = multer({ storage });
-
-// Profile Picture Upload & Update Route
-app.put('/profile', upload.single('profilePic'), async (req, res) => {
-  try {
-    const { email, firstName, lastName, phone, dob, gender, country, state } = req.body;
-    
-    if (!email) return res.status(400).json({ error: "Email is required" });
-
-    const updateData = { firstName, lastName, phone, dob, gender, country, state };
-
-    if (req.file) {
-      updateData.profilePic = `/uploads/${req.file.filename}`;
-    }
-
-    const updatedUser = await User.findOneAndUpdate(
-      { email },
-      { $set: updateData },
-      { new: true }
-    );
-
-    if (!updatedUser) return res.status(404).json({ error: "User not found" });
-
-    res.json({ message: "Profile updated successfully!", profilePic: updateData.profilePic });
-  } catch (error) {
-    res.status(500).json({ error: "Error updating profile" });
-  }
-});
-
-
-// User Login
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -132,28 +103,57 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Get User Profile
+// 🟢 Update Profile (Includes Salary Update)
+app.put('/profile', upload.single('profilePic'), async (req, res) => {
+  try {
+    const { email, firstName, lastName, phone, salaryAmount, salaryDay } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    let updateFields = { firstName, lastName, phone };
+    if (req.file) updateFields.profilePic = req.file.path;
+    if (salaryAmount !== undefined) updateFields.salaryAmount = salaryAmount;
+    if (salaryDay !== undefined) updateFields.salaryDay = salaryDay;
+
+    const updatedUser = await User.findOneAndUpdate(
+      { email: { $regex: new RegExp("^" + email + "$", "i") } }, 
+      updateFields, 
+      { new: true }
+    ).lean();
+
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ message: "Profile updated successfully", user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// 🟢 Get User Profile
 app.get('/profile', async (req, res) => {
   try {
     const { email } = req.query;
-    console.log("Received email:", email); // Debugging
 
     if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+      return res.status(400).json({ message: "Email is required" });
     }
 
-    // Ensure case-insensitive search
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: { $regex: new RegExp("^" + email + "$", "i") } }).lean();
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(200).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 // Password Reset Request
@@ -233,7 +233,6 @@ const transactionSchema = new mongoose.Schema({
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
 app.get("/transactions", async (req, res) => {
-  
   try {
     const transactions = await Transaction.find(); // Fetch from DB
     res.json(transactions); // Send JSON response
@@ -244,29 +243,24 @@ app.get("/transactions", async (req, res) => {
 
 // Define the Goal Schema
 const GoalSchema = new mongoose.Schema({
-  name: String, // Changed from `title`
-  targetAmount: { type: Number, required: true }, // Changed from `target`
-  currentSavings: { type: Number, required: true }, // Changed from `savings`
+  name: String, 
+  targetAmount: { type: Number, required: true }, 
+  currentSavings: { type: Number, required: true }, 
   completed: { type: Boolean, default: false },
 });
-
-
 
 const Goal = mongoose.model("Goal", GoalSchema);
 
 // 🟢 GET All Goals
 app.get('/goals', async (req, res) => {
   try {
-      const goals = await Goal.find();  // Make sure `Goal` model is defined
+      const goals = await Goal.find();  
       res.json(goals);
   } catch (error) {
       console.error('Error fetching goals:', error);
       res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
-
-
 
 // 🟢 POST Create a New Goal
 app.post("/goals", async (req, res) => {
@@ -280,15 +274,15 @@ app.post("/goals", async (req, res) => {
   }
 });
 
-
 // 🟢 PUT Update a Goal
 app.put("/goals/:id", async (req, res) => {
   try {
-    const { name, description, target, savings, completed } = req.body;
+    const { name, targetAmount, currentSavings, completed } = req.body;
+    
     const updatedGoal = await Goal.findByIdAndUpdate(
       req.params.id,
-      { title, description, target, savings, completed },
-      { new: true, runValidators: true }  // ✅ Ensures validation rules apply
+      { name, targetAmount, currentSavings, completed },
+      { new: true, runValidators: true }
     );
 
     if (!updatedGoal) {
@@ -297,11 +291,10 @@ app.put("/goals/:id", async (req, res) => {
 
     res.json(updatedGoal);
   } catch (err) {
-    res.status(500).json({ error: "Error updating goal" });
+    console.error("Error updating goal:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
-
 
 // 🔴 DELETE a Goal
 app.delete("/goals/:id", async (req, res) => {
@@ -318,6 +311,11 @@ app.delete("/goals/:id", async (req, res) => {
   }
 });
 
+// Endpoint to handle profile saving
+app.post("/api/saveProfile", (req, res) => {
+  console.log("Received data:", req.body);
+  res.json({ message: "Profile saved successfully!" });
+});
 
 // Start Server
 app.listen(port, () => {

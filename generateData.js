@@ -1,27 +1,30 @@
-require('dotenv').config();
 const mongoose = require('mongoose');
 const { faker } = require('@faker-js/faker');
-const Transaction = require('./Transaction');
+const Transaction = require('./models/Transaction');
+const Salary = require('./models/Salary');
 
-// Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ Connection error:', err));
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
-// Function to generate a unique Transaction ID
-function generateTransactionId() {
-  return Math.floor(10000000 + Math.random() * 90000000).toString();
-}
+// Function to check and insert salary transaction
+async function generateSalaryTransaction() {
+  const today = new Date().getDate(); // Get today's date (1-31)
 
-// Function to generate fake transaction data
-function generateTransaction() {
-  return {
-    transactionId: generateTransactionId(),
-    date: new Date(), // Current timestamp
-    amount: faker.finance.amount(10, 1000, 2), // Random amount
-    category: faker.helpers.arrayElement(["Food", "Transport", "Entertainment", "Shopping"]),
-    description: faker.lorem.sentence()
-  };
+  const salaryRecords = await Salary.find(); // Get all salary records
+
+  for (const salary of salaryRecords) {
+    if (salary.salaryDay === today) {
+      const salaryTransaction = {
+        transactionId: faker.datatype.uuid(),
+        date: new Date(),
+        amount: salary.amount,
+        category: "Income",
+        description: "Monthly Salary"
+      };
+
+      await Transaction.create(salaryTransaction);
+      console.log('✅ Salary transaction inserted:', salaryTransaction);
+    }
+  }
 }
 
 // Function to generate transactions at random times
@@ -31,15 +34,24 @@ function scheduleRandomTransactions() {
 
   setTimeout(async () => {
     try {
-      const transaction = generateTransaction();
+      const transaction = {
+        transactionId: faker.datatype.uuid(),
+        date: new Date(),
+        amount: faker.finance.amount(10, 1000, 2),
+        category: faker.helpers.arrayElement(["Food", "Transport", "Entertainment", "Shopping"]),
+        description: faker.lorem.sentence()
+      };
+
       await Transaction.create(transaction);
       console.log('✅ Transaction inserted:', transaction);
     } catch (error) {
       console.error('❌ Error inserting transaction:', error);
     }
-    scheduleRandomTransactions(); // Schedule the next one
+
+    generateSalaryTransaction(); // Check for salary deposits
+    scheduleRandomTransactions(); // Schedule next transaction
   }, randomInterval);
 }
 
-// Start generating transactions when the script runs
+// Start process
 scheduleRandomTransactions();
