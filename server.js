@@ -288,22 +288,62 @@ app.get('/reset-password', (req, res) => {
 });
 
 const transactionSchema = new mongoose.Schema({
+  _id: mongoose.Schema.Types.ObjectId,
+  transactionId: { type: Number, unique: true },
   amount: Number,
   category: String,
   date: Date,
-  description: String,
+  description: { type: String, default: "" }, // Make it optional with default value
 });
+
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
 app.get("/transactions", async (req, res) => {
   try {
-    const transactions = await Transaction.find(); // Fetch from DB
-    res.json(transactions); // Send JSON response
+    const transactions = await Transaction.find();
+    res.json(transactions);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.post("/transactions", async (req, res) => {
+  try {
+      console.log("Received request:", req.body);
+
+      const { category, amount, date, description = "" } = req.body;
+
+      // Convert amount to a number
+      const amountValue = parseFloat(amount);
+      if (isNaN(amountValue)) {
+          return res.status(400).json({ error: "Invalid amount. Must be a number." });
+      }
+
+      // Find last transaction and auto-increment ID
+      const lastTransaction = await Transaction.findOne().sort({ transactionId: -1 });
+      const transactionId = lastTransaction ? lastTransaction.transactionId + 1 : 1;
+
+      const newTransaction = new Transaction({
+          _id: new mongoose.Types.ObjectId(),
+          transactionId, 
+          category,
+          amount: amountValue, // Store as number
+          date: new Date(date), // Ensure valid date
+          description
+      });
+
+      await newTransaction.save();
+      console.log("Transaction saved:", newTransaction);
+
+      res.status(201).json({ message: "Transaction added successfully", transactionId });
+
+  } catch (error) {
+      console.error("Error adding transaction:", error);
+      res.status(500).json({ error: error.message });
+  }
+});
+
 
 // Define the Goal Schema
 const GoalSchema = new mongoose.Schema({

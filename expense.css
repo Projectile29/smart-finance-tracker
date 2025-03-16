@@ -26,7 +26,7 @@ body {
     top: 0;
     z-index: 1000;
     width: 100%;
-    height:100px
+    height: 100px;
 }
 
 .header h2 {
@@ -126,43 +126,182 @@ main {
     overflow-y: auto;
 }
 
-
-.card.large {
-    grid-column: span 2;
-}
-
-.link-account {
-    background: #3b5998;
-    color: white;
-    padding: 8px 15px;
-    border: none;
-    cursor: pointer;
-}
-
-.add-expense {
-    background: #007bff;
-    color: white;
-    padding: 5px 10px;
-    border: none;
-    cursor: pointer;
+.expense-form {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     border-radius: 20px;
+    text-align: center;
 }
 
-.expenses-table, .total-expenses {
-    background: #f8f9fa;
-    padding: 10px;
-    border-radius: 20px;
+.expense-form label {
+    display: block;
+    margin: 10px 0 5px;
+    font-weight: bold;
+}
+
+.expense-form input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: space-between;
     margin-top: 10px;
 }
 
+.form-buttons button {
+    padding: 8px 15px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.form-buttons button:first-child {
+    background: #4CAF50;
+    color: white;
+}
+
+.form-buttons button:last-child {
+    background: #f44336;
+    color: white;
+}
+
+/* Expenses Section */
+.expenses-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* General Table Styling */
+.expenses-table, .total-expenses {
+    width: 240%;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+    overflow: hidden;
+}
+
+/* Table Header */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 10px;
+    background: white;
+    overflow: hidden;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.no-transactions {
+    text-align: center;
+    font-weight: bold;
+    color: gray;
+    padding: 10px;
+}
+
+/* Styling Table Head */
+th {
+    background: #5071FF;
+    color: white;
+    padding: 8px 12px; 
+    height: 10px;
+    text-align: left;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Styling Table Rows */
+td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    font-size: 15px;
+    color: #333;
+}
+
+/* Zebra Striping for Rows */
+tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+/* Hover Effect */
+tr:hover {
+    background: #e8f0ff;
+    transition: 0.3s ease;
+}
+
+
+
+/* Make it Responsive */
+@media (max-width: 768px) {
+    th, td {
+        font-size: 14px;
+        padding: 10px;
+    }
+    .total-expenses {
+        font-size: 16px;
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Improved Add Expense Button */
+.add-expense {
+    background: linear-gradient(135deg, #007bff, #0056b3); /* Gradient for a modern look */
+    color: white;
+    padding: 12px 18px;
+    border: none;
+    cursor: pointer;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 500;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); /* Soft shadow */
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Hover Effect */
+.add-expense:hover {
+    background: linear-gradient(135deg, #0056b3, #004091);
+    box-shadow: 0 6px 12px rgba(0, 86, 179, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Active Click Effect */
+.add-expense:active {
+    transform: scale(0.95);
+}
+
+/* Optional: Add an icon */
+.add-expense::before {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+
+/* View All Button */
 #view-all-btn {
     display: block;
-    margin: 20px auto; /* Center the button */
-    padding: 8px 15px;
-    font-size: 12px;
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 14px;
     font-weight: bold;
     color: white;
-    background: #4CAF50; /* Green background */
+    background: #4CAF50;
     border: none;
     border-radius: 20px;
     cursor: pointer;
@@ -171,30 +310,13 @@ main {
 }
 
 #view-all-btn:hover {
-    background: #45a049; /* Slightly darker green */
-    transform: translateY(-2px); /* Lift effect */
+    background: #45a049;
+    transform: translateY(-2px);
 }
 
 #view-all-btn:active {
-    transform: translateY(1px); /* Pressed effect */
+    transform: translateY(1px);
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 20px;
-}
-
-th, td {
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
-    text-align: left;
-}
-
-th {
-    background: #007bff;
-    color: white;
 }
 
 /* Media Queries for Mobile Responsiveness */
@@ -212,10 +334,6 @@ th {
     .dashboard {
         grid-template-columns: 1fr;
     }
-
-    .card.large {
-        grid-column: span 1;
-    }
 }
 
 @media (max-width: 480px) {
@@ -232,7 +350,6 @@ th {
     }
 }
 
-
 /* Notification Panel */
 .notification-panel {
     display: none;
@@ -246,37 +363,32 @@ th {
     padding: 15px;
     z-index: 1000;
     transition: opacity 0.3s ease-in-out;
-  }
-  
-  .notification-panel h3 {
+}
+
+.notification-panel h3 {
     margin: 0 0 10px;
     font-size: 1.2rem;
     color: #333;
     border-bottom: 1px solid #ddd;
     padding-bottom: 8px;
-  }
-  
-  .notification-panel ul {
+}
+
+.notification-panel ul {
     list-style: none;
     padding: 0;
     margin: 0;
     max-height: 200px;
     overflow-y: auto;
-  }
-  
-  .notification-panel ul li {
+}
+
+.notification-panel ul li {
     padding: 8px;
     border-bottom: 1px solid #f0f0f0;
     font-size: 0.9rem;
     color: #555;
-  }
-  
-  .notification-panel ul li:last-child {
-    border-bottom: none;
-  }
-  
-  /* Clear All Button */
-  .notification-panel button {
+}
+
+.notification-panel button {
     width: 100%;
     margin-top: 10px;
     padding: 8px;
@@ -285,14 +397,14 @@ th {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-  }
-  
-  .notification-panel button:hover {
+}
+
+.notification-panel button:hover {
     background: #0056b3;
-  }
-  
-  /* Show Panel */
-  .show-panel {
+}
+
+/* Show Panel */
+.show-panel {
     display: block;
     opacity: 1;
-  }
+}

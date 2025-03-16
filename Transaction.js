@@ -1,12 +1,22 @@
 const mongoose = require('mongoose');
 
-const TransactionSchema = new mongoose.Schema({
-  transactionId: { type: String, required: true, unique: true }, // Changed from accountNumber
-  date: { type: Date, required: true },
-  amount: { type: String, required: true },
+const transactionSchema = new mongoose.Schema({
+  _id: mongoose.Schema.Types.ObjectId,
+  transactionId: { type: Number, unique: true }, // Ensure it's a number
+  amount: { type: Number, required: true }, // Store amount as a number
   category: { type: String, required: true },
+  date: { type: Date, required: true },
   description: { type: String }
 });
 
-// Export the model
-module.exports = mongoose.model('Transaction', TransactionSchema);
+// Auto-increment transactionId
+transactionSchema.pre("save", async function (next) {
+  if (!this.transactionId) {
+    const lastTransaction = await this.constructor.findOne().sort({ transactionId: -1 });
+    this.transactionId = lastTransaction ? lastTransaction.transactionId + 1 : 1;
+  }
+  next();
+});
+
+const Transaction = mongoose.model("Transaction", transactionSchema);
+module.exports = Transaction;
