@@ -103,6 +103,70 @@ app.post('/login', async (req, res) => {
   }
 });
 
+const moment = require('moment'); // Import moment.js for date handling
+
+// 🟢 Generate Salary (Check if today is Salary Day)
+app.get('/generate-salary', async (req, res) => {
+  try {
+      const { email } = req.query;
+      if (!email) return res.status(400).json({ message: "Email is required" });
+
+      console.log("Received email:", email);
+
+      // Ensure we are querying the correct collection
+      const user = await User.findOne({ email: { $regex: new RegExp("^" + email + "$", "i") } }).lean();
+
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      console.log("User found:", user);
+
+      // Ensure the salary details exist
+      if (!user.salaryDay || !user.salaryAmount) {
+          return res.status(400).json({ message: "Salary details missing for this user" });
+      }
+
+      const today = new Date().getDate();
+      const { salaryDay, salaryAmount } = user;
+
+      if (today !== salaryDay) {
+          return res.status(400).json({ message: `Today is not your salary day. Your salary day is on ${salaryDay}` });
+      }
+
+      return res.status(200).json({
+          message: "Salary generated successfully",
+          salaryAmount,
+          salaryDay
+      });
+
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Endpoint to get salary
+app.get("/salary", async (req, res) => {
+  const email = req.query.email; // Get email from query params
+  if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+      // ✅ Query the User model instead of db.collection
+      const user = await User.findOne({ email: email });
+
+      if (!user || user.salaryAmount === undefined) {
+          return res.status(404).json({ error: "Salary not found for this email" });
+      }
+
+      res.json({ salary: user.salaryAmount });
+  } catch (error) {
+      console.error("Error fetching salary:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 // 🟢 Update Profile (Includes Salary Update)
 app.put('/profile', upload.single('profilePic'), async (req, res) => {
   try {
