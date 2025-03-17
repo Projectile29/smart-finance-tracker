@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="goals.css">
   <!-- Font Awesome for Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <script defer src="goals.js"></script>
+  <link rel="icon" href="data:,">
 </head>
 <body>
 
@@ -45,13 +45,20 @@
     <section class="content">
       <div class="goals-header">
         <h2>Goals</h2>
-        <button id="addGoalBtn" class="btn">Add Goals</button>
+        <button id="addGoalBtn" >Add Goals</button>
       </div>
 
       <!-- Goals Container -->
       <div id="goalsContainer" class="goals-container">
         <!-- Goals will be added here dynamically -->
       </div>
+      <div class="goal-projection">
+        <h3>AI-Based Goal Projection</h3>
+        <div id="projectionOutput">
+          <p>Loading projections...</p>
+        </div>
+      </div>
+      
     </section>
   </main>
 
@@ -69,7 +76,7 @@
       <label>Current Savings (₹):</label>
       <input type="number" id="currentSavings" placeholder="Enter current savings">
 
-      <button id="saveGoalBtn" class="btn">Save Goal</button>
+      <button id="saveGoalBtn">Save Goal</button>
     </div>
   </div>
   <!-- Delete Confirmation Pop-Up -->
@@ -78,8 +85,6 @@
     <button id="confirmDelete">Yes, Delete</button>
     <button id="cancelDelete">Cancel</button>
   </div>
-  
-
   <script src="goals.js"></script>
 </body>
 </html>

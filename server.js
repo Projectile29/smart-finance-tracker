@@ -344,16 +344,14 @@ app.post("/transactions", async (req, res) => {
   }
 });
 
+const Goal = require("./models/goal.model"); // Importing the model
 
-// Define the Goal Schema
-const GoalSchema = new mongoose.Schema({
-  name: String, 
-  targetAmount: { type: Number, required: true }, 
-  currentSavings: { type: Number, required: true }, 
-  completed: { type: Boolean, default: false },
+const goalSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  targetAmount: { type: Number, required: true },
+  currentSavings: { type: Number, required: true }
 });
 
-const Goal = mongoose.model("Goal", GoalSchema);
 
 // 🟢 GET All Goals
 app.get('/goals', async (req, res) => {
@@ -369,14 +367,20 @@ app.get('/goals', async (req, res) => {
 // 🟢 POST Create a New Goal
 app.post("/goals", async (req, res) => {
   try {
-    const { name, targetAmount, currentSavings } = req.body;
-    const newGoal = new Goal({ name, targetAmount, currentSavings });
-    await newGoal.save();
-    res.status(201).json(newGoal);
-  } catch (err) {
-    res.status(500).json({ error: "Error creating goal" });
+      const { name, targetAmount, currentSavings } = req.body;
+      if (!name || !targetAmount || !currentSavings) {
+          return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const newGoal = new Goal({ name, targetAmount, currentSavings });
+      await newGoal.save();
+      res.status(201).json(newGoal);
+  } catch (error) {
+      console.error("Error saving goal:", error);
+      res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 // 🟢 PUT Update a Goal
 app.put("/goals/:id", async (req, res) => {
@@ -412,6 +416,26 @@ app.delete("/goals/:id", async (req, res) => {
     res.json({ message: "Goal deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: "Error deleting goal" });
+  }
+});
+
+app.get("/goals/:id/projection", async (req, res) => {
+  try {
+      const goal = await Goal.findById(req.params.id);
+      if (!goal) return res.status(404).json({ error: "Goal not found" });
+
+      // Example projection logic (Modify as per your logic)
+      const monthsRequired = Math.ceil((goal.targetAmount - goal.currentSavings) / 100); 
+      const projectedCompletionDate = new Date();
+      projectedCompletionDate.setMonth(projectedCompletionDate.getMonth() + monthsRequired);
+
+      res.json({
+          projectedCompletionDate: projectedCompletionDate.toDateString(),
+          estimatedMonths: monthsRequired,
+          status: monthsRequired > 0 ? "In Progress" : "Completed"
+      });
+  } catch (error) {
+      res.status(500).json({ error: "Error fetching projection" });
   }
 });
 
