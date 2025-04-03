@@ -1,24 +1,64 @@
-let categories = [];
-let editingIndex = -1;
+let transactions = [];
 
+document.addEventListener("DOMContentLoaded", async () => {
+    await fetchTransactionsForBudget();
+    await updateTable();
+});
+
+// Popup Functions
 function openAddPopup() {
     document.getElementById('addPopup').style.display = 'block';
 }
 
 function closeAddPopup() {
     document.getElementById('addPopup').style.display = 'none';
+    document.getElementById('categoryName').value = '';
+    document.getElementById('categoryBudget').value = '';
 }
 
-function openEditPopup(index) {
-    editingIndex = index;
-    document.getElementById('editSpentAmount').value = categories[index].spent;
-    document.getElementById('editPopup').style.display = 'block';
+function openEditPopup(budgetId) {
+    console.log("Opening edit popup for budgetId:", budgetId); // Debug ID
+    const editPopup = document.getElementById('editPopup');
+    if (!editPopup) {
+        console.error("Edit popup element not found");
+        return;
+    }
+
+    fetch(`http://localhost:5000/budgets/${budgetId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`HTTP error! Status: ${response.status}, Response: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(budget => {
+        console.log("Fetched budget:", budget); // Debug response
+        const editSpentInput = document.getElementById('editSpentAmount');
+        if (!editSpentInput) {
+            console.error("editSpentAmount input not found");
+            return;
+        }
+        editSpentInput.value = budget.spent || 0;
+        editPopup.dataset.budgetId = budgetId;
+        editPopup.style.display = 'block';
+    })
+    .catch(error => {
+        console.error("Error fetching budget for edit:", error.message);
+        alert(`Unable to load budget data: ${error.message}`);
+    });
 }
 
 function closeEditPopup() {
-    document.getElementById('editPopup').style.display = 'none';
+    const editPopup = document.getElementById('editPopup');
+    if (editPopup) editPopup.style.display = 'none';
 }
 
+// Add Category (POST to /budgets)
 function addCategory() {
     const name = document.getElementById('categoryName').value.trim();
     const budget = parseFloat(document.getElementById('categoryBudget').value);
@@ -28,106 +68,178 @@ function addCategory() {
         return;
     }
 
-    categories.push({ name, budget, spent: 0 });
-    updateTable();
-    closeAddPopup();
+    fetch('http://localhost:5000/budgets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, budget, spent: 0 })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to add budget');
+        return response.json();
+    })
+    .then(() => {
+        updateTable();
+        closeAddPopup();
+    })
+    .catch(error => {
+        console.error("Error adding budget:", error);
+        alert('Failed to add category');
+    });
 }
 
+// Update Spent Amount (PUT to /budgets/:id)
 function updateSpent() {
+    const editPopup = document.getElementById('editPopup');
     const spent = parseFloat(document.getElementById('editSpentAmount').value);
+    const budgetId = editPopup.dataset.budgetId;
 
     if (isNaN(spent) || spent < 0) {
         alert('Invalid amount');
         return;
     }
 
-    categories[editingIndex].spent = spent;
-    updateTable();
-    closeEditPopup();
+    fetch(`http://localhost:5000/budgets/${budgetId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spent })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to update spent amount');
+        return response.json();
+    })
+    .then(() => {
+        updateTable();
+        closeEditPopup();
+    })
+    .catch(error => {
+        console.error("Error updating spent:", error);
+        alert('Failed to update spent amount');
+    });
 }
 
-function deleteCategory(index) {
-    if (confirm("Are you sure you want to delete this category?")) {
-        categories.splice(index, 1);
-        updateTable();
+// Fetch Transactions and Update Budget Spent
+async function fetchTransactionsForBudget() {
+    try {
+        const response = await fetch('http://localhost:5000/transactions');
+        if (!response.ok) throw new Error('Network response was not ok');
+        transactions = await response.json();
+
+        const spentByCategory = transactions.reduce((acc, tx) => {
+            acc[tx.category] = (acc[tx.category] || 0) + parseFloat(tx.amount);
+            return acc;
+        }, {});
+
+        const budgetsResponse = await fetch('http://localhost:5000/budgets');
+        const budgets = await budgetsResponse.json();
+
+        for (const budget of budgets) {
+            const newSpent = spentByCategory[budget.name] || budget.spent || 0;
+            if (newSpent !== budget.spent) {
+                await fetch(`http://localhost:5000/budgets/${budget._id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ spent: newSpent })
+                });
+            }
+        }
+    } catch (error) {
+        console.error("Error fetching transactions:", error);
     }
 }
 
-function updateTable() {
+// Delete Category
+function deleteCategory(budgetId) {
+    const row = document.querySelector(`tr[data-budget-id="${budgetId}"]`);
+    const categoryName = row ? row.querySelector('td:first-child').textContent : '';
+    const hasExpenses = transactions.some(tx => tx.category === categoryName);
+
+    if (hasExpenses) {
+        alert("You cannot delete this category because there are transactions linked to it.");
+        return;
+    }
+
+    if (confirm("Are you sure you want to delete this category?")) {
+        fetch(`http://localhost:5000/budgets/${budgetId}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to delete budget');
+            updateTable();
+        })
+        .catch(error => {
+            console.error("Error deleting budget:", error);
+            alert('Failed to delete category');
+        });
+    }
+}
+
+// Update Table with Budget Data
+async function updateTable() {
+    await fetchTransactionsForBudget();
     const table = document.getElementById('categoryTable');
     table.innerHTML = '';
 
     let totalBudget = 0, totalRemaining = 0;
 
-    categories.forEach((cat, index) => {
-        const remaining = cat.budget - cat.spent;
-        totalBudget += cat.budget;
-        totalRemaining += remaining;
+    try {
+        const response = await fetch('http://localhost:5000/budgets');
+        if (!response.ok) throw new Error('Failed to fetch budgets');
+        const budgets = await response.json();
 
-        table.innerHTML += `
-            <tr>
-                <td>${cat.name}</td>
-                <td>₹${cat.budget}</td>
-                <td>₹${cat.spent}</td>
-                <td>₹${remaining}</td>
-                <td>
-                    <i class="fas fa-edit edit-icon" onclick="openEditPopup(${index})"></i>
-                    <i class="fas fa-trash delete-icon" onclick="deleteCategory(${index})"></i>
-                </td>
-            </tr>`;
-    });
+        budgets.forEach(budget => {
+            const remaining = budget.budget - budget.spent;
+            totalBudget += budget.budget;
+            totalRemaining += remaining;
 
-    document.getElementById('totalBudget').innerText = totalBudget.toFixed(2);
-    document.getElementById('totalRemaining').innerText = totalRemaining.toFixed(2);
-}
+            if (budget.spent > budget.budget) {
+                addNotification(`Warning: ${budget.name} has exceeded its budget by ₹${(budget.spent - budget.budget).toFixed(2)}!`);
+            }
 
-document.addEventListener('DOMContentLoaded', updateTable);
+            const row = `
+                <tr data-budget-id="${budget._id}">
+                    <td>${budget.name}</td>
+                    <td>₹${budget.budget.toFixed(2)}</td>
+                    <td>₹${budget.spent.toFixed(2)}</td>
+                    <td>₹${remaining.toFixed(2)}</td>
+                    <td>
+                        <button onclick="openEditPopup('${budget._id}')">Edit</button>
+                        <button onclick="deleteCategory('${budget._id}')">Delete</button>
+                    </td>
+                </tr>
+            `;
+            table.innerHTML += row;
+        });
 
-// Function to Toggle Notification Panel
-function toggleNotifications() {
-    let panel = document.getElementById("notificationPanel");
-    panel.classList.toggle("show-panel");
-}
-
-// Hide Panel When Clicking Outside
-document.addEventListener("click", function (event) {
-    let panel = document.getElementById("notificationPanel");
-    let bell = document.querySelector(".notification-bell");
-
-    if (!panel.contains(event.target) && !bell.contains(event.target)) {
-        panel.classList.remove("show-panel");
+        document.getElementById('totalBudget').innerText = totalBudget.toFixed(2);
+        document.getElementById('totalRemaining').innerText = totalRemaining.toFixed(2);
+    } catch (error) {
+        console.error("Error updating table:", error);
+        table.innerHTML = '<tr><td colspan="5">Error loading budgets</td></tr>';
     }
-});
-
-// Load Notifications from Local Storage
-function loadNotifications() {
-    let notificationList = document.getElementById("notificationList");
-    notificationList.innerHTML = ""; // Clear current list
-
-    let notifications = JSON.parse(localStorage.getItem("notifications")) || [];
-
-    notifications.forEach((notification) => {
-        let newItem = document.createElement("li");
-        newItem.textContent = notification;
-        notificationList.appendChild(newItem);
-    });
 }
 
-// Function to Add a New Notification
+// Notification Functions
 function addNotification(message) {
-    let notifications = JSON.parse(localStorage.getItem("notifications")) || [];
+    const notificationList = document.getElementById('notificationList');
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    notifications.push(message);
+    localStorage.setItem('notifications', JSON.stringify(notifications));
 
-    notifications.push(message); // Add new message
-    localStorage.setItem("notifications", JSON.stringify(notifications)); // Save to storage
-
-    loadNotifications(); // Refresh list
+    const li = document.createElement('li');
+    li.textContent = message;
+    notificationList.appendChild(li);
 }
 
-// Function to Clear All Notifications
+function toggleNotifications() {
+    const panel = document.getElementById('notificationPanel');
+    panel.classList.toggle('show-panel');
+}
+
 function clearNotifications() {
-    localStorage.removeItem("notifications"); // Remove from storage
-    loadNotifications(); // Refresh list
+    localStorage.removeItem('notifications');
+    document.getElementById('notificationList').innerHTML = '';
 }
 
-// Load Notifications When Page Loads
-document.addEventListener("DOMContentLoaded", loadNotifications);
+window.addEventListener('transactionAdded', async () => {
+    await updateTable();
+});

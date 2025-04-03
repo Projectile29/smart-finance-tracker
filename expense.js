@@ -1,16 +1,28 @@
-// Global Variables
 let transactions = [];
 let totalAmount = 0;
 let showingAll = false;
 let transactionsTable;
 let viewAllBtn;
 
-// Fetch transactions from server and update the UI
-async function fetchTransactions() {
+// Retry delay helper (exponential backoff)
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchTransactions(retryCount = 3, delayMs = 1000) {
     try {
         const response = await fetch("http://localhost:5000/transactions");
-        transactions = (await response.json()).sort((a, b) => new Date(b.date) - new Date(a.date));
+        if (!response.ok) {
+            if (response.status === 429 && retryCount > 0) {
+                console.log(`429 Too Many Requests - Retrying in ${delayMs}ms... (${retryCount} retries left)`);
+                await delay(delayMs);
+                return fetchTransactions(retryCount - 1, delayMs * 2); // Exponential backoff
+            }
+            throw new Error(`Server responded with status ${response.status}`);
+        }
 
+        const data = await response.json();
+        transactions = data.sort((a, b) => new Date(b.date) - new Date(a.date));
         totalAmount = transactions.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
         displayTransactions(false);
         updateTotalExpensesUI();
@@ -20,10 +32,12 @@ async function fetchTransactions() {
         }
     } catch (error) {
         console.error("Error fetching transactions:", error);
+        if (error.message.includes("429")) {
+            addNotification("Too many requests to server. Please wait and try again.");
+        }
     }
 }
 
-// Function to display transactions
 function displayTransactions(showAll) {
     const visibleTransactions = showAll ? transactions : transactions.slice(0, 6);
 
@@ -44,13 +58,11 @@ function displayTransactions(showAll) {
     }
 }
 
-// Function to format date properly
 function formatDate(dateString) {
     const date = new Date(dateString);
     return isNaN(date) ? "Invalid Date" : date.toLocaleDateString("en-GB");
 }
 
-// Function to update total expenses UI
 function updateTotalExpensesUI() {
     const totalExpensesTable = document.querySelector(".total-expenses tbody");
     if (totalExpensesTable) {
@@ -60,18 +72,17 @@ function updateTotalExpensesUI() {
     }
 }
 
-// Add Expense
 async function addExpense() {
-    let category = document.getElementById("category").value;
-    let amount = document.getElementById("amount").value;
-    let date = document.getElementById("date").value;
+    const category = document.getElementById("category").value.trim();
+    const amount = parseFloat(document.getElementById("amount").value);
+    const date = document.getElementById("date").value;
 
-    if (!category || !amount || !date) {
+    if (!category || isNaN(amount) || !date) {
         alert("Please fill all fields!");
         return;
     }
 
-    let newTransaction = { category, amount: parseFloat(amount).toFixed(2), date };
+    const newTransaction = { category, amount: amount.toFixed(2), date };
 
     try {
         const response = await fetch("http://localhost:5000/transactions", {
@@ -80,54 +91,53 @@ async function addExpense() {
             body: JSON.stringify(newTransaction)
         });
 
-        if (response.ok) {
-            alert("Transaction added successfully!");
-            await fetchTransactions(); // Refresh the transactions list
-            closeExpenseForm();
-        } else {
-            alert("Failed to add transaction!");
+        if (!response.ok) {
+            if (response.status === 429) {
+                addNotification("Too many requests. Please wait before adding more expenses.");
+                return;
+            }
+            throw new Error("Failed to add transaction");
         }
+
+        alert("Transaction added successfully!");
+        await fetchTransactions(); // Refresh transactions
+        closeExpenseForm();
+        window.dispatchEvent(new Event('transactionAdded'));
     } catch (error) {
         console.error("Error adding transaction:", error);
+        alert("Failed to add transaction!");
     }
 }
 
-
-
-// Notification Panel
+// Notification Functions
 function toggleNotifications() {
-    let panel = document.getElementById("notificationPanel");
-    if (panel) {
-        panel.classList.toggle("show-panel");
-    }
+    const panel = document.getElementById("notificationPanel");
+    if (panel) panel.classList.toggle("show-panel");
 }
 
 document.addEventListener("click", function (event) {
-    let panel = document.getElementById("notificationPanel");
-    let bell = document.querySelector(".notification-bell");
-
+    const panel = document.getElementById("notificationPanel");
+    const bell = document.querySelector(".notification-bell");
     if (panel && bell && !panel.contains(event.target) && !bell.contains(event.target)) {
         panel.classList.remove("show-panel");
     }
 });
 
-// Notifications
 function loadNotifications() {
-    let notificationList = document.getElementById("notificationList");
+    const notificationList = document.getElementById("notificationList");
     if (!notificationList) return;
 
     notificationList.innerHTML = "";
-    let notifications = JSON.parse(localStorage.getItem("notifications")) || [];
-
-    notifications.forEach((notification) => {
-        let newItem = document.createElement("li");
+    const notifications = JSON.parse(localStorage.getItem("notifications")) || [];
+    notifications.forEach(notification => {
+        const newItem = document.createElement("li");
         newItem.textContent = notification;
         notificationList.appendChild(newItem);
     });
 }
 
 function addNotification(message) {
-    let notifications = JSON.parse(localStorage.getItem("notifications")) || [];
+    const notifications = JSON.parse(localStorage.getItem("notifications")) || [];
     notifications.push(message);
     localStorage.setItem("notifications", JSON.stringify(notifications));
     loadNotifications();
@@ -140,16 +150,20 @@ function clearNotifications() {
 
 // Expense Form
 function openExpenseForm() {
-    let form = document.getElementById("expense-form");
+    const form = document.getElementById("expense-form");
     if (form) form.style.display = "block";
 }
 
 function closeExpenseForm() {
-    let form = document.getElementById("expense-form");
-    if (form) form.style.display = "none";
+    const form = document.getElementById("expense-form");
+    if (form) {
+        form.style.display = "none";
+        document.getElementById("category").value = "";
+        document.getElementById("amount").value = "";
+        document.getElementById("date").value = "";
+    }
 }
 
-// Wait for the DOM to load before setting event listeners
 document.addEventListener("DOMContentLoaded", async () => {
     transactionsTable = document.getElementById("transactions-body");
     viewAllBtn = document.getElementById("view-all-btn");
@@ -163,4 +177,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await fetchTransactions();
     loadNotifications();
+});
+
+window.addEventListener('transactionAdded', async () => {
+    if (window.location.pathname.includes('budget.html')) {
+        await fetchTransactionsForBudget();
+        updateTable();
+    }
 });
