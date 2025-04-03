@@ -1,12 +1,13 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
+// Define schema
 const transactionSchema = new mongoose.Schema({
-  _id: mongoose.Schema.Types.ObjectId,
-  transactionId: { type: Number, unique: true }, // Ensure it's a number
-  amount: { type: Number, required: true }, // Store amount as a number
+  transactionId: { type: Number, unique: true }, // Ensure unique transaction ID
+  amount: { type: Number, required: true },
   category: { type: String, required: true },
   date: { type: Date, required: true },
-  description: { type: String }
+  description: { type: String },
+  type: { type: String, enum: ["Income", "Expense"], required: true } // Income or Expense
 });
 
 // Auto-increment transactionId
@@ -18,5 +19,6 @@ transactionSchema.pre("save", async function (next) {
   next();
 });
 
+// Create and export model
 const Transaction = mongoose.model("Transaction", transactionSchema);
 module.exports = Transaction;
