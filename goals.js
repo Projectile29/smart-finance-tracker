@@ -1,48 +1,56 @@
 var API_BASE_URL = "http://localhost:5000";
 
-// Wait for DOM to be fully loaded
 document.addEventListener("DOMContentLoaded", () => {
     initializeEventListeners();
     fetchGoals();
 });
 
-// Initialize Event Listeners
 function initializeEventListeners() {
-    // Open Add Goal Modal
-    const addGoalBtn = document.getElementById("addGoalBtn");
-    if (addGoalBtn) {
-        addGoalBtn.addEventListener("click", () => {
-            document.getElementById("goalModal").style.display = "block";
-        });
-    }
+    document.getElementById("addGoalBtn")?.addEventListener("click", () => {
+        document.getElementById("goalModal").style.display = "block";
+    });
 
-    // Close Modals
     document.querySelectorAll(".close").forEach(closeBtn => {
         closeBtn.addEventListener("click", () => {
             document.getElementById("goalModal").style.display = "none";
-            document.getElementById("deleteModal").style.display = "none";
             document.getElementById("editGoalModal").style.display = "none";
         });
     });
 
-    // Save New Goal
-    const saveGoalBtn = document.getElementById("saveGoalBtn");
-    if (saveGoalBtn) {
-        saveGoalBtn.addEventListener("click", saveGoal);
-    } else {
-        console.error("Error: #saveGoalBtn not found in the DOM.");
+    document.getElementById("saveGoalBtn")?.addEventListener("click", saveGoal);
+    document.getElementById("saveEditGoalBtn")?.addEventListener("click", saveEditedGoal);
+}
+
+// ✅ Function to Save a New Goal
+async function saveGoal() {
+    const goalName = document.getElementById("goalName").value.trim();
+    const targetAmount = parseFloat(document.getElementById("targetAmount").value);
+    const currentSavings = parseFloat(document.getElementById("currentSavings").value);
+
+    if (!goalName || isNaN(targetAmount) || isNaN(currentSavings)) {
+        alert("Please fill in all fields correctly.");
+        return;
     }
 
-    // Save Edited Goal
-    const saveEditGoalBtn = document.getElementById("saveEditGoalBtn");
-    if (saveEditGoalBtn) {
-        saveEditGoalBtn.addEventListener("click", saveEditedGoal);
-    } else {
-        console.error("Error: #saveEditGoalBtn not found in the DOM.");
+    const goalData = { name: goalName, targetAmount, currentSavings };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/goals`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(goalData),
+        });
+
+        if (!response.ok) throw new Error("Failed to save goal");
+
+        document.getElementById("goalModal").style.display = "none";
+        fetchGoals(); // Refresh the goals list
+    } catch (error) {
+        console.error("Error saving goal:", error);
     }
 }
 
-// Fetch and Display Goals
+// ✅ Function to Fetch and Display Goals
 async function fetchGoals() {
     try {
         const response = await fetch(`${API_BASE_URL}/goals`);
@@ -50,13 +58,9 @@ async function fetchGoals() {
 
         const goals = await response.json();
         const goalsContainer = document.getElementById("goalsContainer");
+        if (!goalsContainer) return;
 
-        if (!goalsContainer) {
-            console.error("Error: #goalsContainer not found in the DOM.");
-            return;
-        }
-
-        goalsContainer.innerHTML = ""; // Clear previous entries
+        goalsContainer.innerHTML = "";
 
         goals.forEach(goal => {
             const goalCard = document.createElement("div");
@@ -64,7 +68,7 @@ async function fetchGoals() {
             goalCard.setAttribute("data-id", goal._id);
 
             goalCard.innerHTML = `
-                <h3>${goal.name} 
+                <h3>${goal.name}
                     <span class="edit-icon" data-id="${goal._id}"><i class="fas fa-edit"></i></span> 
                     <span class="delete-icon" data-id="${goal._id}"><i class="fas fa-trash"></i></span>
                 </h3>
@@ -78,124 +82,85 @@ async function fetchGoals() {
             goalsContainer.appendChild(goalCard);
         });
 
-        attachDynamicEventListeners(); // Attach event listeners after elements are created
+        attachDynamicEventListeners();
     } catch (error) {
         console.error("Error fetching goals:", error);
     }
 }
 
-// Attach event listeners to dynamically created elements
+// ✅ Attach event listeners for dynamically created elements
 function attachDynamicEventListeners() {
     document.querySelectorAll(".delete-icon").forEach(button => {
-        button.addEventListener("click", function (e) {
-            const goalId = e.target.closest(".delete-icon").dataset.id;
-            confirmDelete(goalId);
+        button.addEventListener("click", e => {
+            confirmDelete(e.target.closest(".delete-icon").dataset.id);
         });
     });
 
     document.querySelectorAll(".edit-icon").forEach(button => {
-        button.addEventListener("click", function (e) {
-            const goalId = e.target.closest(".edit-icon").dataset.id;
-            openEditModal(goalId);
+        button.addEventListener("click", e => {
+            openEditModal(e.target.closest(".edit-icon").dataset.id);
         });
     });
 }
 
-// Save New Goal
-async function saveGoal() {
-    const goalName = document.getElementById("goalName").value.trim();
-    const targetAmount = parseFloat(document.getElementById("targetAmount").value);
-    const currentSavings = parseFloat(document.getElementById("currentSavings").value);
-
-    if (!goalName || isNaN(targetAmount) || isNaN(currentSavings)) {
-        alert("Please enter valid values for all fields.");
-        return;
-    }
-
-    const newGoal = { name: goalName, targetAmount, currentSavings };
-
-    try {
-        await fetch(`${API_BASE_URL}/goals`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newGoal)
-        });
-
-        document.getElementById("goalModal").style.display = "none";
-        fetchGoals(); // Refresh goals list
-    } catch (error) {
-        console.error("Error saving goal:", error);
-    }
-}
-
-// Open Edit Modal
-async function openEditModal(goalId) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/goals/${goalId}`);
-        if (!response.ok) throw new Error("Failed to fetch goal data");
-
-        const goal = await response.json();
-
-        // Populate edit form
-        document.getElementById("editGoalId").value = goal._id;
-        document.getElementById("editGoalName").value = goal.name;
-        document.getElementById("editTargetAmount").value = goal.targetAmount;
-        document.getElementById("editCurrentSavings").value = goal.currentSavings;
-
-        document.getElementById("editGoalModal").style.display = "block";
-    } catch (error) {
-        console.error("Error opening edit modal:", error);
-    }
-}
-
-// Save Edited Goal
+// ✅ Function to Save Edited Goal
 async function saveEditedGoal() {
     const goalId = document.getElementById("editGoalId").value;
     const goalName = document.getElementById("editGoalName").value.trim();
     const targetAmount = parseFloat(document.getElementById("editTargetAmount").value);
     const currentSavings = parseFloat(document.getElementById("editCurrentSavings").value);
 
-    if (!goalName || isNaN(targetAmount) || isNaN(currentSavings)) {
-        alert("Please enter valid values for all fields.");
+    if (!goalId || !goalName || isNaN(targetAmount) || isNaN(currentSavings)) {
+        alert("Please fill in all fields correctly.");
         return;
     }
 
-    const updatedGoal = { name: goalName, targetAmount, currentSavings };
+    const goalData = { name: goalName, targetAmount, currentSavings };
 
     try {
-        await fetch(`${API_BASE_URL}/goals/${goalId}`, {
+        const response = await fetch(`${API_BASE_URL}/goals/${goalId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedGoal)
+            body: JSON.stringify(goalData),
         });
 
+        if (!response.ok) throw new Error("Failed to update goal");
+
         document.getElementById("editGoalModal").style.display = "none";
-        fetchGoals();
+        fetchGoals(); // Refresh goals list
     } catch (error) {
         console.error("Error updating goal:", error);
     }
 }
 
-// Confirm Delete Modal
-function confirmDelete(goalId) {
-    document.getElementById("deleteModal").style.display = "block";
-
-    document.getElementById("confirmDelete").onclick = async function () {
-        await deleteGoal(goalId);
-    };
-
-    document.getElementById("cancelDelete").onclick = function () {
-        document.getElementById("deleteModal").style.display = "none";
-    };
-}
-
-// Delete Goal
-async function deleteGoal(goalId) {
+// ✅ Function to Fetch Goal Projections
+async function fetchGoalProjection(targetAmount, currentSavings) {
     try {
-        await fetch(`${API_BASE_URL}/goals/${goalId}`, { method: "DELETE" });
-        document.getElementById("deleteModal").style.display = "none";
-        fetchGoals();
+        const response = await fetch(`${API_BASE_URL}/api/goal-projection`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ targetAmount, currentSavings }),
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch projections");
+
+        const data = await response.json();
+        document.getElementById("progressBar").value = (currentSavings / targetAmount) * 100;
+        document.getElementById("completionDate").innerText = `Projected Completion: ${data.projectedCompletionDate}`;
+
     } catch (error) {
-        console.error("Error deleting goal:", error);
+        console.error("Error fetching goal projection:", error);
+        document.getElementById("completionDate").innerText = "Failed to load projections.";
     }
 }
+
+// ✅ Function to Update UI with AI-Based Projection
+async function updateUI() {
+    const targetAmount = 50000; 
+    const currentSavings = 20000; 
+
+    await fetchGoalProjection(targetAmount, currentSavings);
+}
+
+// Initialize AI Projection
+updateUI();

@@ -20,6 +20,7 @@ const port = process.env.PORT || 5000;
 // Enable CORS
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting to prevent abuse
 const limiter = rateLimit({
@@ -299,6 +300,38 @@ const transactionSchema = new mongoose.Schema({
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
+// Get Monthly Savings Trend
+app.get('/api/savings-trend', async (req, res) => {
+  try {
+      const transactions = await Transaction.aggregate([
+          {
+              $group: {
+                  _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
+                  totalIncome: {
+                      $sum: { $cond: [{ $eq: ["$type", "Income"] }, "$amount", 0] }
+                  },
+                  totalExpense: {
+                      $sum: { $cond: [{ $eq: ["$type", "Expense"] }, "$amount", 0] }
+                  },
+                  netSavings: {
+                      $sum: {
+                          $cond: [
+                              { $eq: ["$type", "Income"] },
+                              "$amount",
+                              { $multiply: ["$amount", -1] }
+                          ]
+                      }
+                  }
+              }
+          },
+          { $sort: { "_id": 1 } }
+      ]);
+      res.json(transactions);
+  } catch (error) {
+      res.status(500).json({ error: 'Error fetching savings trend' });
+  }
+});
+
 app.get("/transactions", async (req, res) => {
   try {
     const transactions = await Transaction.find();
@@ -443,6 +476,43 @@ app.get("/goals/:id/projection", async (req, res) => {
 app.post("/api/saveProfile", (req, res) => {
   console.log("Received data:", req.body);
   res.json({ message: "Profile saved successfully!" });
+});
+
+app.post('/api/goal-projection', async (req, res) => {
+  const { targetAmount, currentSavings } = req.body;
+
+  try {
+      const savingsTrend = await Transaction.aggregate([
+          {
+              $group: {
+                  _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
+                  netSavings: {
+                      $sum: {
+                          $cond: [
+                              { $eq: ["$type", "Income"] },
+                              "$amount",
+                              { $multiply: ["$amount", -1] }
+                          ]
+                      }
+                  }
+              }
+          },
+          { $sort: { "_id": -1 } }, // Get recent months first
+          { $limit: 6 } // Consider last 6 months for trend analysis
+      ]);
+
+      const avgMonthlySavings = savingsTrend.reduce((acc, cur) => acc + cur.netSavings, 0) / savingsTrend.length;
+      const monthsNeeded = Math.ceil((targetAmount - currentSavings) / avgMonthlySavings);
+
+      res.json({
+          avgMonthlySavings,
+          monthsNeeded,
+          projectedCompletionDate: new Date(new Date().setMonth(new Date().getMonth() + monthsNeeded)).toDateString()
+      });
+
+  } catch (error) {
+      res.status(500).json({ error: 'Error calculating projection' });
+  }
 });
 
 // Start Server
