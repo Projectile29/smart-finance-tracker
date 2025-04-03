@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expenses</title>
+  <title>Goals</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
   <link rel="stylesheet" href="goals.css">
-  <!-- Font Awesome for Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="icon" href="data:,">
 </head>
@@ -17,23 +16,17 @@
     <h2>Smart Finance Tracker</h2>
     <div class="header-right">
       <a href="./dashboard.html"><img src="assets/home-icon.png" alt="Home" class="icon"></a>
-       <!-- Notification Bell Icon (Add inside header) -->
-<img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
-
+      <img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
       <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon"></a>
     </div>
-    <!-- Notification Popup Panel -->
-<div id="notificationPanel" class="notification-panel">
-  <h3>Notifications</h3>
-  <ul id="notificationList">
-      <!-- Notifications will be dynamically added -->
-  </ul>
-  <button onclick="clearNotifications()">Clear All</button>
-</div>
+    <div id="notificationPanel" class="notification-panel">
+      <h3>Notifications</h3>
+      <ul id="notificationList"></ul>
+      <button onclick="clearNotifications()">Clear All</button>
+    </div>
   </header>
 
   <main>
-    <!-- Sidebar -->
     <aside class="sidebar">
       <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
       <a href="./budget.html"><button class="nav-btn">Budget</button></a>
@@ -45,20 +38,19 @@
     <section class="content">
       <div class="goals-header">
         <h2>Goals</h2>
-        <button id="addGoalBtn" >Add Goals</button>
+        <button id="addGoalBtn">Add Goal</button>
       </div>
 
-      <!-- Goals Container -->
-      <div id="goalsContainer" class="goals-container">
-        <!-- Goals will be added here dynamically -->
-      </div>
+      <div id="goalsContainer" class="goals-container"></div>
+      
+      <!-- AI-Based Goal Projection Section -->
       <div class="goal-projection">
         <h3>AI-Based Goal Projection</h3>
         <div id="projectionOutput">
-          <p>Loading projections...</p>
+          <progress id="progressBar" value="0" max="100"></progress>
+          <p id="completionDate">Projected Completion: Loading...</p>
         </div>
       </div>
-      
     </section>
   </main>
 
@@ -69,22 +61,30 @@
       <h2>Add a New Goal</h2>
       <label>Goal Name:</label>
       <input type="text" id="goalName" placeholder="Enter goal name">
-
       <label>Target Amount (₹):</label>
       <input type="number" id="targetAmount" placeholder="Enter target amount">
-
       <label>Current Savings (₹):</label>
       <input type="number" id="currentSavings" placeholder="Enter current savings">
-
       <button id="saveGoalBtn">Save Goal</button>
     </div>
   </div>
-  <!-- Delete Confirmation Pop-Up -->
-<div id="deleteModal">
-    <p>Are you sure you want to delete this goal?</p>
-    <button id="confirmDelete">Yes, Delete</button>
-    <button id="cancelDelete">Cancel</button>
+
+  <!-- Edit Goal Modal -->
+  <div id="editGoalModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Edit Goal</h2>
+      <input type="hidden" id="editGoalId">
+      <label>Goal Name:</label>
+      <input type="text" id="editGoalName" placeholder="Enter goal name">
+      <label>Target Amount (₹):</label>
+      <input type="number" id="editTargetAmount" placeholder="Enter target amount">
+      <label>Current Savings (₹):</label>
+      <input type="number" id="editCurrentSavings" placeholder="Enter current savings">
+      <button id="saveEditGoalBtn">Save Changes</button>
+    </div>
   </div>
+
   <script src="goals.js"></script>
 </body>
 </html>
