@@ -1,8 +1,16 @@
 var API_BASE_URL = "http://localhost:5000";
 
+// Prevent duplicate AI predictions fetch
+window.hasFetchedPredictions = false;
+
 document.addEventListener("DOMContentLoaded", () => {
     initializeEventListeners();
     fetchGoals();
+
+    if (!window.hasFetchedPredictions) {
+        window.hasFetchedPredictions = true; // Prevent multiple calls
+        setTimeout(() => fetchGoalPredictions(), 500); // Ensure inputs exist
+    }
 });
 
 function initializeEventListeners() {
@@ -21,146 +29,163 @@ function initializeEventListeners() {
     document.getElementById("saveEditGoalBtn")?.addEventListener("click", saveEditedGoal);
 }
 
-// ✅ Function to Save a New Goal
-async function saveGoal() {
-    const goalName = document.getElementById("goalName").value.trim();
-    const targetAmount = parseFloat(document.getElementById("targetAmount").value);
-    const currentSavings = parseFloat(document.getElementById("currentSavings").value);
-
-    if (!goalName || isNaN(targetAmount) || isNaN(currentSavings)) {
-        alert("Please fill in all fields correctly.");
-        return;
-    }
-
-    const goalData = { name: goalName, targetAmount, currentSavings };
-
+async function fetchGoalPredictions() {
     try {
-        const response = await fetch(`${API_BASE_URL}/goals`, {
+        const targetAmount = parseFloat(document.getElementById("targetAmount")?.value) || 20000;
+        const currentSavings = parseFloat(document.getElementById("currentSavings")?.value) || 5000;
+
+        const response = await fetch(`${API_BASE_URL}/api/goal-projection`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(goalData),
+            body: JSON.stringify({ targetAmount, currentSavings })
         });
 
-        if (!response.ok) throw new Error("Failed to save goal");
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
-        document.getElementById("goalModal").style.display = "none";
-        fetchGoals(); // Refresh the goals list
+        const data = await response.json();
+        console.log("🎯 AI Goal Predictions:", data);
+
+        if (data) {
+            displayPredictions(data);
+        } else {
+            document.getElementById("completionDate").textContent = "No predictions available.";
+        }
     } catch (error) {
-        console.error("Error saving goal:", error);
+        console.error("Error fetching AI predictions:", error);
+        document.getElementById("completionDate").textContent = "Error loading projections.";
     }
 }
 
-// ✅ Function to Fetch and Display Goals
+function displayPredictions(prediction) {
+    let progressElement = document.getElementById("goalProgress");
+    let goalBar = document.getElementById("goalBar");
+    let completionDateElement = document.getElementById("completionDate");
+
+    if (!progressElement || !goalBar || !completionDateElement) {
+        console.error("Progress bar or completion date elements not found.");
+        return;
+    }
+
+    progressElement.textContent = `Projected Savings: ₹${prediction.avgMonthlySavings.toFixed(2)}`;
+    
+    let progressPercent = Math.min(100, (prediction.monthsNeeded / 12) * 100);
+    goalBar.style.width = `${progressPercent}%`;
+
+    completionDateElement.textContent = `Projected Completion: ${prediction.projectedCompletionDate}`;
+}
+
 async function fetchGoals() {
     try {
         const response = await fetch(`${API_BASE_URL}/goals`);
-        if (!response.ok) throw new Error("Failed to fetch goals");
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const goals = await response.json();
-        const goalsContainer = document.getElementById("goalsContainer");
-        if (!goalsContainer) return;
-
-        goalsContainer.innerHTML = "";
-
-        goals.forEach(goal => {
-            const goalCard = document.createElement("div");
-            goalCard.classList.add("goal-card");
-            goalCard.setAttribute("data-id", goal._id);
-
-            goalCard.innerHTML = `
-                <h3>${goal.name}
-                    <span class="edit-icon" data-id="${goal._id}"><i class="fas fa-edit"></i></span> 
-                    <span class="delete-icon" data-id="${goal._id}"><i class="fas fa-trash"></i></span>
-                </h3>
-                <p><strong>Target Amount:</strong> ₹${goal.targetAmount}</p>
-                <p><strong>Current Savings:</strong> ₹<span class="current-savings">${goal.currentSavings}</span></p>
-                <div class="progress-bar">
-                    <div class="progress" style="width: ${(goal.currentSavings / goal.targetAmount) * 100}%"></div>
-                </div>
-            `;
-
-            goalsContainer.appendChild(goalCard);
-        });
-
-        attachDynamicEventListeners();
+        displayGoals(goals);
     } catch (error) {
         console.error("Error fetching goals:", error);
     }
 }
 
-// ✅ Attach event listeners for dynamically created elements
-function attachDynamicEventListeners() {
-    document.querySelectorAll(".delete-icon").forEach(button => {
-        button.addEventListener("click", e => {
-            confirmDelete(e.target.closest(".delete-icon").dataset.id);
-        });
-    });
-
-    document.querySelectorAll(".edit-icon").forEach(button => {
-        button.addEventListener("click", e => {
-            openEditModal(e.target.closest(".edit-icon").dataset.id);
-        });
-    });
-}
-
-// ✅ Function to Save Edited Goal
-async function saveEditedGoal() {
-    const goalId = document.getElementById("editGoalId").value;
-    const goalName = document.getElementById("editGoalName").value.trim();
-    const targetAmount = parseFloat(document.getElementById("editTargetAmount").value);
-    const currentSavings = parseFloat(document.getElementById("editCurrentSavings").value);
-
-    if (!goalId || !goalName || isNaN(targetAmount) || isNaN(currentSavings)) {
-        alert("Please fill in all fields correctly.");
+function displayGoals(goals) {
+    const goalsContainer = document.getElementById("goalsContainer");
+    if (!goalsContainer) {
+        console.error("Goals container element not found.");
         return;
     }
 
-    const goalData = { name: goalName, targetAmount, currentSavings };
+    goalsContainer.innerHTML = "";
+
+    goals.forEach(goal => {
+        const progressPercent = Math.min(100, (goal.currentSavings / goal.targetAmount) * 100); // Calculate progress
+
+        const goalElement = document.createElement("div");
+        goalElement.classList.add("goal-item");
+        goalElement.innerHTML = `
+            <h4>${goal.name}</h4>
+            <p>Target: ₹${goal.targetAmount}</p>
+            <p>Saved: ₹${goal.currentSavings}</p>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: ${progressPercent}%;"></div>
+            </div>
+            <p>${progressPercent.toFixed(2)}% saved</p>
+
+            <button onclick="editGoal('${goal._id}')">Edit</button>
+        `;
+
+        goalsContainer.appendChild(goalElement);
+    });
+}
+
+
+async function saveGoal() {
+    const goalName = document.getElementById("goalName").value;
+    const targetAmount = document.getElementById("targetAmount").value;
+    const currentSavings = document.getElementById("currentSavings").value;
+
+    if (!goalName || !targetAmount || currentSavings === "") {
+        alert("Please fill in all fields.");
+        return;
+    }
+
+    const goalData = { 
+        name: goalName, 
+        targetAmount: parseFloat(targetAmount), 
+        currentSavings: parseFloat(currentSavings) 
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/goals`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(goalData)
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        fetchGoals();
+        document.getElementById("goalModal").style.display = "none";
+    } catch (error) {
+        console.error("Error saving goal:", error);
+    }
+}
+
+async function saveEditedGoal() {
+    const goalId = document.getElementById("editGoalId").value;
+    const goalName = document.getElementById("editGoalName").value;
+    const targetAmount = document.getElementById("editTargetAmount").value;
+    const currentSavings = document.getElementById("editCurrentSavings").value;
+
+    if (!goalId || !goalName || !targetAmount || currentSavings === "") {
+        alert("Please fill in all fields.");
+        return;
+    }
+
+    const updatedGoal = { 
+        name: goalName, 
+        targetAmount: parseFloat(targetAmount), 
+        currentSavings: parseFloat(currentSavings) 
+    };
 
     try {
         const response = await fetch(`${API_BASE_URL}/goals/${goalId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(goalData),
+            body: JSON.stringify(updatedGoal)
         });
 
-        if (!response.ok) throw new Error("Failed to update goal");
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
+        fetchGoals();
         document.getElementById("editGoalModal").style.display = "none";
-        fetchGoals(); // Refresh goals list
     } catch (error) {
         console.error("Error updating goal:", error);
     }
 }
 
-// ✅ Function to Fetch Goal Projections
-async function fetchGoalProjection(targetAmount, currentSavings) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/goal-projection`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ targetAmount, currentSavings }),
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch projections");
-
-        const data = await response.json();
-        document.getElementById("progressBar").value = (currentSavings / targetAmount) * 100;
-        document.getElementById("completionDate").innerText = `Projected Completion: ${data.projectedCompletionDate}`;
-
-    } catch (error) {
-        console.error("Error fetching goal projection:", error);
-        document.getElementById("completionDate").innerText = "Failed to load projections.";
+document.addEventListener("DOMContentLoaded", () => {
+    if (!window.hasFetchedPredictions) {
+        window.hasFetchedPredictions = true;
+        setTimeout(() => fetchGoalPredictions(), 500);
     }
-}
-
-// ✅ Function to Update UI with AI-Based Projection
-async function updateUI() {
-    const targetAmount = 50000; 
-    const currentSavings = 20000; 
-
-    await fetchGoalProjection(targetAmount, currentSavings);
-}
-
-// Initialize AI Projection
-updateUI();
+});

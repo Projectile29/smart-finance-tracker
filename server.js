@@ -9,6 +9,11 @@ const multer = require('multer');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
+const fs = require("fs");
+const { spawn } = require("child_process");
+const { PythonShell } = require("python-shell");
+const path = require("path");
+
 
 require('dotenv').config();
 
@@ -477,6 +482,8 @@ app.delete('/budgets/:id', async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+// ✅ AI-Based Goal Projection API
 app.post('/api/goal-projection', async (req, res) => {
   const { targetAmount, currentSavings } = req.body;
 
@@ -496,9 +503,13 @@ app.post('/api/goal-projection', async (req, res) => {
                   }
               }
           },
-          { $sort: { "_id": -1 } }, // Get recent months first
-          { $limit: 6 } // Consider last 6 months for trend analysis
+          { $sort: { "_id": -1 } },
+          { $limit: 6 }
       ]);
+
+      if (savingsTrend.length === 0) {
+          return res.status(400).json({ error: "Not enough data for projection" });
+      }
 
       const avgMonthlySavings = savingsTrend.reduce((acc, cur) => acc + cur.netSavings, 0) / savingsTrend.length;
       const monthsNeeded = Math.ceil((targetAmount - currentSavings) / avgMonthlySavings);
@@ -510,8 +521,88 @@ app.post('/api/goal-projection', async (req, res) => {
       });
 
   } catch (error) {
-      res.status(500).json({ error: 'Error calculating projection' });
+      console.error(error);
+      res.status(500).json({ error: "Error calculating projection" });
   }
+});
+
+// ✅ AI-Based Goal Prediction API
+app.get("/predict-goals", async (req, res) => {
+  try {
+      const transactions = await Transaction.find({}, { date: 1, amount: 1, _id: 0 });
+
+      let options = {
+          mode: "text",
+          pythonOptions: ["-u"],
+          scriptPath: __dirname,
+          args: [JSON.stringify(transactions)]
+      };
+
+      PythonShell.run("predict.py", options, (err, results) => {
+          if (err) {
+              console.error(err);
+              return res.status(500).json({ error: "Error in AI prediction" });
+          }
+          res.json({ projectedCompletion: results[0] });
+      });
+
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to fetch transactions" });
+  }
+});
+
+// ✅ Fix: Added missing /api/projections route
+app.get('/api/projections', async (req, res) => {
+  try {
+      const filePath = path.join(__dirname, "goal_projection.json");
+
+      fs.readFile(filePath, "utf8", (err, data) => {
+          if (err) {
+              return res.status(500).json({ error: "Failed to load projections" });
+          }
+          res.json(JSON.parse(data));
+      });
+
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error fetching projections" });
+  }
+});
+
+// ✅ AI-Based Savings Prediction for Future Months
+app.get("/predict", async (req, res) => {
+  const { futureMonth } = req.query;
+
+  if (!futureMonth) return res.status(400).json({ error: "Future month required" });
+
+  const pythonProcess = spawn("python", ["predict.py", futureMonth]);
+
+  let result = "";
+  pythonProcess.stdout.on("data", data => (result += data.toString()));
+
+  pythonProcess.on("close", code => {
+      if (code === 0) {
+          res.json({ prediction: parseFloat(result.trim()) });
+      } else {
+          res.status(500).json({ error: "Prediction failed" });
+      }
+  });
+});
+
+// ✅ Real-time Model Retraining (MongoDB Change Stream)
+const changeStream = Transaction.watch();
+changeStream.on("change", async (change) => {
+  console.log("⚡ New transaction detected, triggering model retraining...");
+
+  const retrainProcess = spawn("python", ["train_model.py"]);
+  retrainProcess.on("close", (code) => {
+      if (code === 0) {
+          console.log("✅ Model retrained successfully!");
+      } else {
+          console.error("❌ Error retraining model.");
+      }
+  });
 });
 
 // Start Server
