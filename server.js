@@ -605,6 +605,105 @@ changeStream.on("change", async (change) => {
   });
 });
 
+
+
+//temp
+// Add these imports at the top of server.js with the other require statements
+const { CashFlowPrediction, CashFlowPredictor } = require('./cashflow-prediction');
+
+// Add these routes to server.js
+
+// Generate Cash Flow Predictions
+app.post('/api/cash-flow/generate-predictions', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    const predictor = new CashFlowPredictor(userId);
+    const predictions = await predictor.savePredictions();
+    
+    res.status(200).json({ 
+      message: 'Cash flow predictions generated successfully',
+      predictions
+    });
+  } catch (error) {
+    console.error('Error generating cash flow predictions:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate predictions',
+      message: error.message
+    });
+  }
+});
+
+// Get Cash Flow Predictions
+app.get('/api/cash-flow/predictions', async (req, res) => {
+  try {
+    const { userId, months } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    const query = { userId };
+    
+    // If specific months are requested
+    if (months) {
+      const requestedMonths = months.split(',');
+      query.month = { $in: requestedMonths };
+    }
+    
+    const predictions = await CashFlowPrediction.find(query).sort({ month: 1 });
+    
+    res.status(200).json(predictions);
+  } catch (error) {
+    console.error('Error fetching cash flow predictions:', error);
+    res.status(500).json({ error: 'Failed to fetch predictions' });
+  }
+});
+
+// Get Detailed Cash Flow Analysis
+app.get('/api/cash-flow/analysis', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    const predictor = new CashFlowPredictor(userId);
+    
+    // Run full analysis without saving
+    const analysisData = await predictor.generatePredictions();
+    
+    res.status(200).json({
+      predictions: analysisData.predictions,
+      recurringTransactions: analysisData.recurringTransactions,
+      seasonalFactors: analysisData.seasonalFactors,
+      growthTrends: analysisData.growthTrends
+    });
+  } catch (error) {
+    console.error('Error generating cash flow analysis:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate analysis',
+      message: error.message
+    });
+  }
+});
+
+// Manually update Transaction Schema to include userId if needed
+// This ensures our cash flow predictions can be tied to specific users
+
+// *NOTE: This would ideally be in your Transaction.js file, but you can run this once
+// to update existing schema since we saw your Transaction model is already defined
+Transaction.schema.add({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+});
+
+//till this is temp
+
 // Start Server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
