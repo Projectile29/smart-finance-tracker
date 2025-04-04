@@ -57,6 +57,37 @@
     </section>
   </main>
 
+  <!-- Add Goal Modal -->
+  <div id="goalModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>Add Goal</h3>
+      <label for="goalName">Goal Name:</label>
+      <input type="text" id="goalName" />
+      <label for="targetAmount">Target Amount:</label>
+      <input type="number" id="targetAmount" />
+      <label for="currentSavings">Current Savings:</label>
+      <input type="number" id="currentSavings" />
+      <button id="saveGoalBtn">Save Goal</button>
+    </div>
+  </div>
+
+  <!-- Edit Goal Modal -->
+  <div id="editGoalModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>Edit Goal</h3>
+      <input type="hidden" id="editGoalId" />
+      <label for="editGoalName">Goal Name:</label>
+      <input type="text" id="editGoalName" />
+      <label for="editTargetAmount">Target Amount:</label>
+      <input type="number" id="editTargetAmount" />
+      <label for="editCurrentSavings">Current Savings:</label>
+      <input type="number" id="editCurrentSavings" />
+      <button id="saveEditGoalBtn">Save Changes</button>
+    </div>
+  </div>
+
   <script src="goals.js"></script>
 </body>
 </html>

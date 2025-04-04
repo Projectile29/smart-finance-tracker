@@ -43,7 +43,7 @@ async function fetchGoalPredictions() {
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();
-        console.log("🎯 AI Goal Predictions:", data);
+        console.log("🌟 AI Goal Predictions:", data);
 
         if (data) {
             displayPredictions(data);
@@ -117,6 +117,21 @@ function displayGoals(goals) {
     });
 }
 
+function editGoal(goalId) {
+    console.log("Editing goal:", goalId);
+    
+    const modal = document.getElementById("editGoalModal");
+    const inputId = document.getElementById("editGoalId");
+
+    if (!modal || !inputId) {
+        console.error("Edit modal or input not found.");
+        return;
+    }
+
+    inputId.value = goalId;
+    modal.style.display = "block";
+}
+
 
 async function saveGoal() {
     const goalName = document.getElementById("goalName").value;
@@ -182,10 +197,3 @@ async function saveEditedGoal() {
         console.error("Error updating goal:", error);
     }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (!window.hasFetchedPredictions) {
-        window.hasFetchedPredictions = true;
-        setTimeout(() => fetchGoalPredictions(), 500);
-    }
-});
