@@ -66,4 +66,3 @@ class CashFlowPredictor {
 }
 
 module.exports = { CashFlowPrediction, CashFlowPredictor };
-
