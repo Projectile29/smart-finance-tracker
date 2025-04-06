@@ -1,370 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cash Flow Prediction</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <style>
-    .prediction-container {
-      padding: 1rem;
-    }
-    
-    .prediction-card {
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    
-    .prediction-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-    
-    .prediction-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: #333;
-    }
-    
-    .confidence-badge {
-      padding: 0.3rem 0.7rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-    
-    .high-confidence {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    
-    .medium-confidence {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-    
-    .low-confidence {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-    
-    .prediction-stats {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-    
-    .stat-box {
-      flex: 1;
-      text-align: center;
-      padding: 0.5rem;
-    }
-    
-    .stat-label {
-      font-size: 0.8rem;
-      color: #666;
-      margin-bottom: 0.3rem;
-    }
-    
-    .stat-value {
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-    
-    .positive {
-      color: #28a745;
-    }
-    
-    .negative {
-      color: #dc3545;
-    }
-    
-    .prediction-chart {
-      height: 200px;
-      margin-top: 1rem;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-      overflow: hidden;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Flow Prediction</title>
+    <script>
+        // ✅ Generate Predictions (POST Request)
+        async function generatePredictions() {
+            fetch("http://localhost:5000/api/cash-flow/generate-predictions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}) // Ensure a valid JSON body (even if empty)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Predictions Generated:", data);
+                alert("Cash flow predictions generated successfully!");
+            })
+            .catch(error => {
+                console.error("Error generating predictions:", error);
+                alert("Failed to generate predictions.");
+            });
+        }
 
-    .recurring-items {
-      margin-top: 1rem;
-    }
+        // ✅ Fetch Predictions (GET Request)
+        async function fetchPredictions() {
+            fetch("http://localhost:5000/api/cash-flow/predictions")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Predictions Data:", data);
 
-    .recurring-title {
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-    }
+                // ✅ Handle cases where API returns an array directly
+                let predictions = Array.isArray(data) ? data : data.predictions;
 
-    .recurring-list {
-      font-size: 0.8rem;
-      color: #555;
-    }
+                if (!predictions || !Array.isArray(predictions)) {
+                    throw new Error("Predictions data is missing or invalid");
+                }
 
-    .recurring-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.3rem 0;
-      border-bottom: 1px solid #eee;
-    }
+                displayPredictions(predictions);
+            })
+            .catch(error => {
+                console.error("Error fetching predictions:", error);
+                alert("Failed to fetch predictions.");
+            });
+        }
 
-    .generate-btn {
-      display: block;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 0.8rem 1.5rem;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: 500;
-      margin: 1rem 0;
-      transition: background-color 0.3s;
-    }
+        // ✅ Display Predictions
+        function displayPredictions(predictions) {
+            let output = document.getElementById("predictions-output");
+            output.innerHTML = ""; // Clear previous results
 
-    .generate-btn:hover {
-      background-color: #45a049;
-    }
-  </style>
+            predictions.forEach(prediction => {
+                let item = document.createElement("li");
+                item.textContent = `Month: ${prediction.month}, Predicted Cash Flow: ${prediction.predictedCashFlow}`;
+                output.appendChild(item);
+            });
+        }
+
+        // ✅ Fetch Analysis (GET Request)
+        async function fetchAnalysis() {
+            fetch("http://localhost:5000/api/cash-flow/analysis")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(analysis => {
+                console.log("Analysis Data:", analysis);
+                
+                let output = document.getElementById("analysis-output");
+                if (!output) {
+                    throw new Error("analysis-output element not found.");
+                }
+
+                output.textContent = JSON.stringify(analysis, null, 2);
+            })
+            .catch(error => {
+                console.error("Error fetching analysis:", error);
+                alert("Failed to fetch analysis.");
+            });
+        }
+    </script>
 </head>
 <body>
-  <!-- Header Section (similar to dashboard.html) -->
-  <header class="header">
-    <h2>Smart Finance Tracker</h2>
-    <div class="tabs">
-      <button class="tab-btn active">Monthly</button>
-      <button class="tab-btn">Yearly</button>
-      <button class="tab-btn">Today <i class="calendar-icon"></i></button>
-    </div>
-    <div class="header-right">
-      <img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
-      <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon profile"></a>
-      <button id="logout-btn" class="logout-btn">Logout</button>
-    </div>
-    <div id="notificationPanel" class="notification-panel">
-      <h3>Notifications</h3>
-      <ul id="notificationList"></ul>
-      <button onclick="clearNotifications()">Clear All</button>
-    </div>
-  </header>
+    <h1>Cash Flow Prediction</h1>
+    
+    <button onclick="generatePredictions()">Generate Predictions</button>
+    <button onclick="fetchPredictions()">View Predictions</button>
+    <button onclick="fetchAnalysis()">View Analysis</button>
 
-  <main>
-    <!-- Sidebar (similar to dashboard.html) -->
-    <aside class="sidebar">
-      <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
-      <a href="./budget.html"><button class="nav-btn">Budget</button></a>
-      <a href="./reports.html"><button class="nav-btn">Reports</button></a>
-      <a href="./goals.html"><button class="nav-btn">Goals</button></a>
-      <a href="./cashflow.html"><button class="nav-btn active">Cash Flow</button></a>
-    </aside>
+    <h2>Predictions:</h2>
+    <ul id="predictions-output"></ul>
 
-    <!-- Cash Flow Prediction Content -->
-    <section class="prediction-container">
-      <h2>Cash Flow Predictions</h2>
-      <p>View your expected income, expenses, and cash flow for the coming months</p>
-      
-      <button id="generate-predictions" class="generate-btn">
-        <i class="fas fa-sync-alt"></i> Generate New Predictions
-      </button>
-      
-      <div id="predictions-wrapper">
-        <!-- Predictions will be loaded here -->
-        <div class="loading" id="loading-indicator" style="display: none;">
-          <i class="fas fa-spinner fa-spin"></i> Generating predictions...
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    // Store logged in user data
-    let currentUser = null;
-    
-    // Get user data from localStorage (set during login)
-    document.addEventListener('DOMContentLoaded', function() {
-      const userJson = localStorage.getItem('currentUser');
-      if (userJson) {
-        currentUser = JSON.parse(userJson);
-        loadPredictions();
-      } else {
-        // Redirect to login if no user data
-        window.location.href = './login.html';
-      }
-      
-      // Add event listener for generate button
-      document.getElementById('generate-predictions').addEventListener('click', generatePredictions);
-    });
-    
-    async function loadPredictions() {
-      try {
-        const predictionsWrapper = document.getElementById('predictions-wrapper');
-        predictionsWrapper.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading predictions...</div>';
-        
-        const response = await fetch(`/api/cash-flow/predictions?userId=${currentUser._id}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch predictions');
-        }
-        
-        const predictions = await response.json();
-        
-        if (predictions.length === 0) {
-          predictionsWrapper.innerHTML = `
-            <div class="no-data">
-              <p>No predictions available yet. Generate your first prediction.</p>
-            </div>
-          `;
-          return;
-        }
-        
-        // Also fetch detailed analysis for recurring transactions
-        const analysisResponse = await fetch(`/api/cash-flow/analysis?userId=${currentUser._id}`);
-        const analysisData = await analysisResponse.json();
-        
-        // Render predictions
-        let predictionsHTML = '';
-        
-        predictions.forEach(prediction => {
-          const confidenceClass = prediction.confidenceScore > 80 ? 'high-confidence' : 
-                                 prediction.confidenceScore > 60 ? 'medium-confidence' : 'low-confidence';
-          
-          const netFlowClass = prediction.predictedNetFlow >= 0 ? 'positive' : 'negative';
-          const netFlowIcon = prediction.predictedNetFlow >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
-          
-          // Format month for display
-          const [year, month] = prediction.month.split('-');
-          const displayMonth = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
-          
-          predictionsHTML += `
-            <div class="prediction-card">
-              <div class="prediction-header">
-                <div class="prediction-title">${displayMonth} ${year} Forecast</div>
-                <div class="confidence-badge ${confidenceClass}">
-                  Confidence: ${prediction.confidenceScore}%
-                </div>
-              </div>
-              
-              <div class="prediction-stats">
-                <div class="stat-box">
-                  <div class="stat-label">Expected Income</div>
-                  <div class="stat-value positive">₹${prediction.predictedIncome.toFixed(2)}</div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-label">Expected Expenses</div>
-                  <div class="stat-value negative">₹${prediction.predictedExpenses.toFixed(2)}</div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-label">Net Cash Flow</div>
-                  <div class="stat-value ${netFlowClass}">
-                    <i class="fas ${netFlowIcon}"></i>
-                    ₹${Math.abs(prediction.predictedNetFlow).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-              
-              <div class="prediction-chart" id="chart-${prediction.month}">
-                <!-- Chart would be rendered here with a chart library -->
-                <!-- Using placeholder for now -->
-                <img src="/api/placeholder/400/200" alt="Cash flow chart" style="width:100%; height:100%; object-fit:cover;" />
-              </div>
-            </div>
-          `;
-        });
-        
-        // Add recurring transactions section if available
-        if (analysisData && analysisData.recurringTransactions && analysisData.recurringTransactions.length > 0) {
-          predictionsHTML += `
-            <div class="prediction-card">
-              <div class="prediction-header">
-                <div class="prediction-title">Recurring Transactions</div>
-              </div>
-              
-              <div class="recurring-items">
-                <div class="recurring-title">These recurring items were included in your forecast:</div>
-                <div class="recurring-list">
-          `;
-          
-          analysisData.recurringTransactions.forEach(item => {
-            const itemClass = item.type === 'Income' ? 'positive' : 'negative';
-            predictionsHTML += `
-              <div class="recurring-item">
-                <span>${item.category} (${item.frequency})</span>
-                <span class="${itemClass}">₹${item.averageAmount.toFixed(2)}</span>
-              </div>
-            `;
-          });
-          
-          predictionsHTML += `
-                </div>
-              </div>
-            </div>
-          `;
-        }
-        
-        predictionsWrapper.innerHTML = predictionsHTML;
-        
-        // Here you would initialize charts using a library like Chart.js
-        // initializeCharts(predictions);
-        
-      } catch (error) {
-        console.error('Error loading predictions:', error);
-        document.getElementById('predictions-wrapper').innerHTML = `
-          <div class="error">
-            <p>Failed to load predictions. ${error.message}</p>
-          </div>
-        `;
-      }
-    }
-    
-    async function generatePredictions() {
-      try {
-        const loadingIndicator = document.getElementById('loading-indicator');
-        loadingIndicator.style.display = 'block';
-        
-        const response = await fetch('/api/cash-flow/generate-predictions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: currentUser._id
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to generate predictions');
-        }
-        
-        const result = await response.json();
-        console.log('Predictions generated:', result);
-        
-        // Reload predictions
-        loadPredictions();
-        
-      } catch (error) {
-        console.error('Error generating predictions:', error);
-        alert(`Failed to generate predictions: ${error.message}`);
-      } finally {
-        document.getElementById('loading-indicator').style.display = 'none';
-      }
-    }
-    
-    // Notifications functions from dashboard.js
-    function toggleNotifications() {
-      const panel = document.getElementById('notificationPanel');
-      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-    }
-    
-    function clearNotifications() {
-      document.getElementById('notificationList').innerHTML = '';
-    }
-  </script>
+    <h2>Analysis:</h2>
+    <pre id="analysis-output"></pre>
 </body>
 </html>
