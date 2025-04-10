@@ -1,7 +1,7 @@
 let transactions = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await fetchTransactionsForBudget();
+    await fetchTransactions();
     await updateTable();
 });
 
@@ -17,7 +17,7 @@ function closeAddPopup() {
 }
 
 function openEditPopup(budgetId) {
-    console.log("Opening edit popup for budgetId:", budgetId); // Debug ID
+    console.log("Opening edit popup for budgetId:", budgetId);
     const editPopup = document.getElementById('editPopup');
     if (!editPopup) {
         console.error("Edit popup element not found");
@@ -37,7 +37,7 @@ function openEditPopup(budgetId) {
         return response.json();
     })
     .then(budget => {
-        console.log("Fetched budget:", budget); // Debug response
+        console.log("Fetched budget:", budget);
         const editSpentInput = document.getElementById('editSpentAmount');
         if (!editSpentInput) {
             console.error("editSpentAmount input not found");
@@ -58,7 +58,7 @@ function closeEditPopup() {
     if (editPopup) editPopup.style.display = 'none';
 }
 
-// Add Category (POST to /budgets)
+// Add Category (POST to /budgets) with Sync
 function addCategory() {
     const name = document.getElementById('categoryName').value.trim();
     const budget = parseFloat(document.getElementById('categoryBudget').value);
@@ -71,14 +71,15 @@ function addCategory() {
     fetch('http://localhost:5000/budgets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, budget, spent: 0 })
+        body: JSON.stringify({ name, budget, spent: 0 }) // Initial spent is 0
     })
     .then(response => {
         if (!response.ok) throw new Error('Failed to add budget');
         return response.json();
     })
-    .then(() => {
-        updateTable();
+    .then(async () => {
+        await fetchTransactions();          // Refresh transactions
+        await syncBudgetsWithTransactions(); // Sync spent with transactions
         closeAddPopup();
     })
     .catch(error => {
@@ -117,23 +118,31 @@ function updateSpent() {
     });
 }
 
-// Fetch Transactions and Update Budget Spent
-async function fetchTransactionsForBudget() {
+// Fetch Transactions (No Auto-Update)
+async function fetchTransactions() {
     try {
         const response = await fetch('http://localhost:5000/transactions');
         if (!response.ok) throw new Error('Network response was not ok');
         transactions = await response.json();
+    } catch (error) {
+        console.error("Error fetching transactions:", error);
+    }
+}
 
+// Sync Budgets with Transactions
+async function syncBudgetsWithTransactions() {
+    try {
         const spentByCategory = transactions.reduce((acc, tx) => {
             acc[tx.category] = (acc[tx.category] || 0) + parseFloat(tx.amount);
             return acc;
         }, {});
 
         const budgetsResponse = await fetch('http://localhost:5000/budgets');
+        if (!budgetsResponse.ok) throw new Error('Failed to fetch budgets');
         const budgets = await budgetsResponse.json();
 
         for (const budget of budgets) {
-            const newSpent = spentByCategory[budget.name] || budget.spent || 0;
+            const newSpent = spentByCategory[budget.name] || 0;
             if (newSpent !== budget.spent) {
                 await fetch(`http://localhost:5000/budgets/${budget._id}`, {
                     method: 'PUT',
@@ -142,8 +151,9 @@ async function fetchTransactionsForBudget() {
                 });
             }
         }
+        await updateTable(); // Refresh table after syncing
     } catch (error) {
-        console.error("Error fetching transactions:", error);
+        console.error("Error syncing budgets with transactions:", error);
     }
 }
 
@@ -175,7 +185,6 @@ function deleteCategory(budgetId) {
 
 // Update Table with Budget Data
 async function updateTable() {
-    await fetchTransactionsForBudget();
     const table = document.getElementById('categoryTable');
     table.innerHTML = '';
 
@@ -240,6 +249,13 @@ function clearNotifications() {
     document.getElementById('notificationList').innerHTML = '';
 }
 
+// Trigger Sync on Transaction Add
 window.addEventListener('transactionAdded', async () => {
-    await updateTable();
+    await fetchTransactions();
+    await syncBudgetsWithTransactions();
 });
+
+// Manual Sync
+function manualSync() {
+    syncBudgetsWithTransactions();
+}
