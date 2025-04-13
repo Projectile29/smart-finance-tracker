@@ -1,232 +1,243 @@
 /* Reset Styles */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  /* General Body Styling */
-  body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f5f5f5;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  /* Header Styling */
-  .header {
-    background-color: white;
-    padding: 30px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ddd;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    width: 100%;
-    height:100px
-  }
-  
-  .header h2 {
-    font-size: 2rem;
-    color: #5071FF;
-    cursor: pointer;
-  }
-  
-  /* Ensure that the tabs are centered */
-  .tabs {
-    display: flex;
-    gap: 10px;
-    padding: 10px;
-    background-color: #6485FF;
-    border-radius: 15px;
-    justify-content: center;
-  }
-  
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    justify-content: center;
-    margin-right: 30px;
-  }
-  
-  /* Icon styling */
-  .header-right .icon {
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-  }
-  
-  /* Tab Button Styling */
-  .tab-btn {
-    background-color: #6485FF;
-    border: none;
-    padding: 10px 20px;
-    font-size: 1rem;
-    border-radius: 15px;
-    cursor: pointer;
-  }
-  
-  .tab-btn.active {
-    background-color: #2D3F8E;
-    color: white;
-  }
-  
-  /* Main Layout Styling */
-  main {
-    display: flex;
-    flex: 1;
-    width: 100%;
-    height: calc(100vh - 60px);
-    background-color: #fff;
-  }
-  
-  /* Sidebar Styling */
-  .sidebar {
-    width: 20%;
-    background-color: #007AFF;
-    color: white;
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-    border-radius: 21px;
-    gap: 25px;
-    margin: 20px;
-  }
-  
-  /* Button Styling Inside Sidebar */
-  .sidebar button {
-    background-color: white;
-    color: #000000;
-    border: none;
-    padding: 20px;
-    font-size: 1.4rem;
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: bold;
-    width: 100%;
-  }
-  
-  .sidebar button:hover {
-    background-color: #0056b3;
-    color: white;
-  }
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-/* ===== Budget Section Styles ===== */
+/* General Body Styling */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f5f5f5;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Styling */
+.header {
+  background-color: white;
+  padding: 30px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 100px;
+}
+
+.header h2 {
+  font-size: 2rem;
+  color: #5071FF;
+  cursor: pointer;
+}
+
+/* Header Right */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  justify-content: center;
+  margin-right: 30px;
+}
+
+.header-right .icon {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+/* Main Layout Styling */
+main {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: calc(100vh - 100px);
+  background-color: #fff;
+}
+
+/* Sidebar Styling */
+.sidebar {
+  width: 20%;
+  background-color: #007AFF;
+  color: white;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 21px;
+  gap: 25px;
+  margin: 20px;
+}
+
+.sidebar button {
+  background-color: white;
+  color: #000000;
+  border: none;
+  padding: 20px;
+  font-size: 1.4rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+}
+
+.sidebar button:hover {
+  background-color: #0056b3;
+  color: white;
+}
+
+.sidebar button.active {
+  background-color: #2D3F8E;
+  color: white;
+}
+
+/* Budget Section Styles */
 .budget-section {
-    padding: 20px;
-    flex: 1;
+  padding: 20px;
+  flex: 1;
 }
 
 h2 {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
-.add-btn {
-    padding: 8px 16px;
-    background-color: #00438a;
-    color: white;
-    border: none;
-    cursor: pointer;
-    margin-bottom: 10px;
-    border-radius: 4px;
+/* Budget Actions */
+.budget-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
-/* ===== Table Styles ===== */
+.add-btn, .sync-btn {
+  padding: 8px 16px;
+  background-color: #00438a;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.sync-btn {
+  background-color: #007bff;
+}
+
+.add-btn:hover, .sync-btn:hover {
+  opacity: 0.9;
+}
+
+/* Table Styles */
 table {
-    width: 100%;
-    margin-top: 10px;
-    border-collapse: collapse;
-    background-color: #fff;
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  background-color: #fff;
 }
 
 th, td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    text-align: left;
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
 }
 
 th {
-    background-color: #007bff;
-    color: white;
+  background-color: #007bff;
+  color: white;
 }
 
-/* ===== Edit Icon Style ===== */
-.edit-icon, .delete-icon {
-    cursor: pointer;
-    font-size: 18px;
-    margin-right: 10px;
+td button {
+  padding: 5px 10px;
+  margin-right: 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-.edit-icon { color: #000000; }
-.delete-icon { color: #000000; }
+td button:first-child {
+  background-color: #007bff;
+  color: white;
+}
 
-/* ===== Popups - Common ===== */
+td button:last-child {
+  background-color: #dc3545;
+  color: white;
+}
+
+/* Overspent Highlight */
+tr.overspent {
+  background-color: #ffe6e6; /* Light red background */
+}
+
+tr.overspent td:nth-child(3), /* Spent */
+tr.overspent td:nth-child(4) /* Remaining */
+{
+  color: #dc3545; /* Bootstrap's danger red */
+  font-weight: bold;
+}
+
+/* Popups - Common */
 .popup {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    z-index: 10;
-    padding: 20px;
-    border-radius: 10px;
-    min-width: 300px;
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 10;
+  padding: 20px;
+  border-radius: 10px;
+  min-width: 300px;
 }
 
 .popup-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* ===== Popup Close Button ===== */
 .close {
-    align-self: flex-end;
-    cursor: pointer;
-    font-size: 20px;
-    font-weight: bold;
+  align-self: flex-end;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
 }
 
-/* ===== Form Inputs inside Popup ===== */
 .popup input {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .popup button {
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
-/* ===== Budget Overview Box ===== */
+/* Budget Overview Box */
 .budget-overview {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f0f8ff;
-    border: 1px solid #007bff;
-    border-radius: 8px;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f0f8ff;
+  border: 1px solid #007bff;
+  border-radius: 8px;
 }
 
 .budget-overview h3 {
-    margin: 0 0 10px 0;
+  margin: 0 0 10px 0;
 }
 
 .budget-overview p {
-    margin: 5px 0;
-    font-weight: bold;
+  margin: 5px 0;
+  font-weight: bold;
 }
-
 
 /* Notification Panel */
 .notification-panel {
@@ -270,7 +281,6 @@ th {
   border-bottom: none;
 }
 
-/* Clear All Button */
 .notification-panel button {
   width: 100%;
   margin-top: 10px;
@@ -286,7 +296,6 @@ th {
   background: #0056b3;
 }
 
-/* Show Panel */
 .show-panel {
   display: block;
   opacity: 1;

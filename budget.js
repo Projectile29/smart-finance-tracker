@@ -71,15 +71,15 @@ function addCategory() {
     fetch('http://localhost:5000/budgets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, budget, spent: 0 }) // Initial spent is 0
+        body: JSON.stringify({ name, budget, spent: 0 })
     })
     .then(response => {
         if (!response.ok) throw new Error('Failed to add budget');
         return response.json();
     })
     .then(async () => {
-        await fetchTransactions();          // Refresh transactions
-        await syncBudgetsWithTransactions(); // Sync spent with transactions
+        await fetchTransactions();
+        await syncBudgetsWithTransactions();
         closeAddPopup();
     })
     .catch(error => {
@@ -118,7 +118,7 @@ function updateSpent() {
     });
 }
 
-// Fetch Transactions (No Auto-Update)
+// Fetch Transactions
 async function fetchTransactions() {
     try {
         const response = await fetch('http://localhost:5000/transactions');
@@ -151,7 +151,7 @@ async function syncBudgetsWithTransactions() {
                 });
             }
         }
-        await updateTable(); // Refresh table after syncing
+        await updateTable();
     } catch (error) {
         console.error("Error syncing budgets with transactions:", error);
     }
@@ -204,8 +204,10 @@ async function updateTable() {
                 addNotification(`Warning: ${budget.name} has exceeded its budget by ₹${(budget.spent - budget.budget).toFixed(2)}!`);
             }
 
+            // Apply 'overspent' class if spent exceeds budget
+            const overspentClass = budget.spent > budget.budget ? 'overspent' : '';
             const row = `
-                <tr data-budget-id="${budget._id}">
+                <tr data-budget-id="${budget._id}" class="${overspentClass}">
                     <td>${budget.name}</td>
                     <td>₹${budget.budget.toFixed(2)}</td>
                     <td>₹${budget.spent.toFixed(2)}</td>

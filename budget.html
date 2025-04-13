@@ -13,19 +13,15 @@
         <h2>Smart Finance Tracker</h2>
         <div class="header-right">
             <a href="./dashboard.html"><img src="assets/home-icon.png" alt="Home" class="icon"></a>
-             <!-- Notification Bell Icon (Add inside header) -->
-<img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
-
+            <img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
             <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon"></a>
         </div>
-<!-- Notification Popup Panel -->
-<div id="notificationPanel" class="notification-panel">
-    <h3>Notifications</h3>
-    <ul id="notificationList">
-        <!-- Notifications will be dynamically added -->
-    </ul>
-    <button onclick="clearNotifications()">Clear All</button>
-</div>
+        <!-- Notification Popup Panel -->
+        <div id="notificationPanel" class="notification-panel">
+            <h3>Notifications</h3>
+            <ul id="notificationList"></ul>
+            <button onclick="clearNotifications()">Clear All</button>
+        </div>
     </header>
 
     <main>
@@ -45,7 +41,10 @@
 
             <section class="budget-section">
                 <h2>Budget Categories</h2>
-                <button class="add-btn" onclick="openAddPopup()">+ Add Category</button>
+                <div class="budget-actions">
+                    <button class="add-btn" onclick="openAddPopup()">+ Add Category</button>
+                    <button class="sync-btn" onclick="manualSync()">Sync Transactions</button>
+                </div>
 
                 <table>
                     <thead>
@@ -54,7 +53,7 @@
                             <th>Budget (₹)</th>
                             <th>Spent (₹)</th>
                             <th>Remaining (₹)</th>
-                            
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="categoryTable"></tbody>
@@ -66,7 +65,7 @@
     <!-- Add Category Popup -->
     <div id="addPopup" class="popup">
         <div class="popup-content">
-            <span class="close" onclick="closeAddPopup()">&times;</span>
+            <span class="close" onclick="closeAddPopup()">×</span>
             <h3>Add New Category</h3>
             <label>Category Name:</label>
             <input type="text" id="categoryName">
@@ -79,7 +78,7 @@
     <!-- Edit Spent Popup -->
     <div id="editPopup" class="popup">
         <div class="popup-content">
-            <span class="close" onclick="closeEditPopup()">&times;</span>
+            <span class="close" onclick="closeEditPopup()">×</span>
             <h3>Edit Spent Amount</h3>
             <label>Spent Amount (₹):</label>
             <input type="number" id="editSpentAmount">
