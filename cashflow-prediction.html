@@ -4,106 +4,324 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cash Flow Prediction</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="cashflow-prediction.css">
     <script>
-        // ✅ Generate Predictions (POST Request)
+        // Generate Predictions (POST Request)
         async function generatePredictions() {
-            fetch("http://localhost:5000/api/cash-flow/generate-predictions", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({}) // Ensure a valid JSON body (even if empty)
-            })
-            .then(response => {
+            showLoader();
+            showInfoMessage('Generating predictions...');
+            
+            try {
+                const response = await fetch("http://localhost:5000/api/cash-flow/generate-predictions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({})
+                });
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Predictions Generated:", data);
-                alert("Cash flow predictions generated successfully!");
-            })
-            .catch(error => {
+                
+                const data = await response.json();
+                showInfoMessage('Cash flow predictions generated successfully!', 3000);
+                fetchPredictions('future');
+            } catch (error) {
                 console.error("Error generating predictions:", error);
-                alert("Failed to generate predictions.");
-            });
+                showErrorMessage(`Failed to generate predictions: ${error.message}`);
+            } finally {
+                hideLoader();
+            }
         }
 
-        // ✅ Fetch Predictions (GET Request)
-        async function fetchPredictions() {
-            fetch("http://localhost:5000/api/cash-flow/predictions")
-            .then(response => {
+        // Fetch Predictions (GET Request)
+        async function fetchPredictions(direction = 'future') {
+            showLoader();
+            
+            try {
+                const response = await fetch(`http://localhost:5000/api/cash-flow/predictions?direction=${direction}`);
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Predictions Data:", data);
-
-                // ✅ Handle cases where API returns an array directly
-                let predictions = Array.isArray(data) ? data : data.predictions;
-
-                if (!predictions || !Array.isArray(predictions)) {
-                    throw new Error("Predictions data is missing or invalid");
+                
+                const predictions = await response.json();
+                
+                if (!Array.isArray(predictions)) {
+                    throw new Error("Invalid predictions format");
                 }
-
-                displayPredictions(predictions);
-            })
-            .catch(error => {
+                
+                displayPredictions(predictions, direction === 'past');
+                updateToggleLink(direction);
+            } catch (error) {
                 console.error("Error fetching predictions:", error);
-                alert("Failed to fetch predictions.");
-            });
+                showErrorMessage(`Failed to fetch predictions: ${error.message}`);
+            } finally {
+                hideLoader();
+            }
         }
 
-        // ✅ Display Predictions
-        function displayPredictions(predictions) {
-            let output = document.getElementById("predictions-output");
+        // Display Predictions
+        function displayPredictions(predictions, showActual = false) {
+            const output = document.getElementById("predictions-output");
             output.innerHTML = ""; // Clear previous results
 
+            if (predictions.length === 0) {
+                output.innerHTML = "<p>No predictions available.</p>";
+                return;
+            }
+
+            const container = document.createElement("div");
+            container.className = "predictions-container";
+            
             predictions.forEach(prediction => {
-                let item = document.createElement("li");
-                item.textContent = `Month: ${prediction.month}, Predicted Cash Flow: ${prediction.predictedCashFlow}`;
-                output.appendChild(item);
+                const window = document.createElement("div");
+                window.className = "prediction-window";
+                
+                let content = `
+                    <div class="prediction-title">${formatMonth(prediction.month)}</div>
+                    <div class="prediction-amount">Predicted: ₹${prediction.predictedCashFlow.toLocaleString('en-IN')}</div>
+                `;
+                
+                if (showActual && prediction.actualCashFlow != null) {
+                    content += `<div class="prediction-actual">Actual: ₹${prediction.actualCashFlow.toLocaleString('en-IN')}</div>`;
+                }
+                
+                window.innerHTML = content;
+                window.onclick = () => showAnalysisModal(prediction, showActual);
+                container.appendChild(window);
             });
+            
+            output.appendChild(container);
         }
 
-        // ✅ Fetch Analysis (GET Request)
-        async function fetchAnalysis() {
-            fetch("http://localhost:5000/api/cash-flow/analysis")
-            .then(response => {
+        // Show Analysis Modal
+        async function showAnalysisModal(prediction, showActual) {
+            const modal = document.getElementById("analysis-modal");
+            const modalContent = document.getElementById("modal-content");
+            modalContent.innerHTML = `
+                <span class="close-button" onclick="closeModal()">×</span>
+                <h2>Analysis for ${formatMonth(prediction.month)}</h2>
+                <div class="analysis-section">
+                    <h3>Breakdown</h3>
+                    <p>Predicted Cash Flow: ₹${prediction.predictedCashFlow.toLocaleString('en-IN')}</p>
+                    ${showActual && prediction.actualCashFlow != null ? `<p>Actual Cash Flow: ₹${prediction.actualCashFlow.toLocaleString('en-IN')}</p>` : ''}
+                </div>
+                <div class="analysis-section">
+                    <h3>Cash Flow Trend</h3>
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+                <div class="analysis-section">
+                    <h3>Category Breakdown</h3>
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            `;
+            
+            modal.style.display = "flex";
+            
+            try {
+                const response = await fetch(`http://localhost:5000/api/cash-flow/analysis?month=${prediction.month}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(analysis => {
-                console.log("Analysis Data:", analysis);
+                const analysis = await response.json();
                 
-                let output = document.getElementById("analysis-output");
-                if (!output) {
-                    throw new Error("analysis-output element not found.");
-                }
-
-                output.textContent = JSON.stringify(analysis, null, 2);
-            })
-            .catch(error => {
-                console.error("Error fetching analysis:", error);
-                alert("Failed to fetch analysis.");
-            });
+                const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+                new Chart(cashFlowCtx, {
+                    type: 'line',
+                    data: {
+                        labels: analysis.historicalMonths.concat([formatMonth(prediction.month)]),
+                        datasets: [{
+                            label: 'Cash Flow (₹)',
+                            data: analysis.historicalCashFlows.concat([prediction.predictedCashFlow]),
+                            borderColor: '#007bff',
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: false }
+                        }
+                    }
+                });
+                
+                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+                new Chart(categoryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(analysis.categoryBreakdown),
+                        datasets: [{
+                            label: 'Amount (₹)',
+                            data: Object.values(analysis.categoryBreakdown),
+                            backgroundColor: ['#28a745', '#dc3545', '#ffc107', '#17a2b8']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error fetching analysis:', error);
+                modalContent.innerHTML += `<p class="error-message">Failed to load analysis: ${error.message}</p>`;
+            }
         }
+
+        // Close Modal
+        function closeModal() {
+            const modal = document.getElementById("analysis-modal");
+            modal.style.display = "none";
+        }
+
+        // Format Month for Display
+        function formatMonth(monthStr) {
+            try {
+                const date = new Date(monthStr + "-01");
+                return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            } catch (e) {
+                return monthStr;
+            }
+        }
+
+        // Toggle between Future and Past Predictions
+        function toggleView() {
+            const toggleLink = document.getElementById('toggle-link');
+            const currentView = toggleLink.getAttribute('data-view');
+            const newDirection = currentView === 'future' ? 'past' : 'future';
+            fetchPredictions(newDirection);
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-btn:nth-child(${newDirection === 'future' ? 1 : 2})`).classList.add('active');
+        }
+
+        // Update Toggle Link Text and Heading
+        function updateToggleLink(direction) {
+            const toggleLink = document.getElementById('toggle-link');
+            const heading = document.getElementById('predictions-heading');
+            
+            if (direction === 'future') {
+                toggleLink.textContent = 'View Past Predictions';
+                toggleLink.setAttribute('data-view', 'future');
+                heading.textContent = 'Future Cash Flow Predictions';
+            } else {
+                toggleLink.textContent = 'View Future Predictions';
+                toggleLink.setAttribute('data-view', 'past');
+                heading.textContent = 'Past Cash Flow Predictions';
+            }
+        }
+
+        // UI Helper Functions
+        function showLoader() {
+            const output = document.getElementById("predictions-output");
+            output.innerHTML = '<div class="loader"></div>';
+        }
+
+        function hideLoader() {
+            const output = document.getElementById("predictions-output");
+            const loader = output.querySelector('.loader');
+            if (loader) loader.remove();
+        }
+
+        function showInfoMessage(message, timeout = 0) {
+            const output = document.getElementById("predictions-output");
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'info-message';
+            infoDiv.textContent = message;
+            
+            const existingInfos = output.querySelectorAll('.info-message');
+            existingInfos.forEach(el => el.remove());
+            
+            output.prepend(infoDiv);
+            
+            if (timeout > 0) {
+                setTimeout(() => infoDiv.remove(), timeout);
+            }
+        }
+
+        function showErrorMessage(message) {
+            const output = document.getElementById("predictions-output");
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            
+            const existingErrors = output.querySelectorAll('.error-message');
+            existingErrors.forEach(el => el.remove());
+            
+            output.prepend(errorDiv);
+            
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        // Notification Functions
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationPanel');
+            panel.classList.toggle('show-panel');
+        }
+
+        function clearNotifications() {
+            document.getElementById('notificationList').innerHTML = '';
+        }
+
+        // Initialize with empty predictions
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('predictions-output').innerHTML = '<p>No predictions available. Click "Generate Predictions" to start.</p>';
+        });
     </script>
 </head>
 <body>
-    <h1>Cash Flow Prediction</h1>
-    
-    <button onclick="generatePredictions()">Generate Predictions</button>
-    <button onclick="fetchPredictions()">View Predictions</button>
-    <button onclick="fetchAnalysis()">View Analysis</button>
+    <!-- Header Section -->
+    <header class="header">
+        <h2>Smart Finance Tracker</h2>
+        <div class="tabs">
+            <button class="tab-btn active">Future</button>
+            <button class="tab-btn">Past</button>
+        </div>
+        <div class="header-right">
+            <img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
+            <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon profile"></a>
+            <button id="logout-btn" class="logout-btn">Logout</button>
+        </div>
+        <!-- Notification Popup Panel -->
+        <div id="notificationPanel" class="notification-panel">
+            <h3>Notifications</h3>
+            <ul id="notificationList">
+                <!-- Notifications will be dynamically added -->
+            </ul>
+            <button onclick="clearNotifications()">Clear All</button>
+        </div>
+    </header>
 
-    <h2>Predictions:</h2>
-    <ul id="predictions-output"></ul>
+    <main>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
+            <a href="./budget.html"><button class="nav-btn">Budget</button></a>
+            <a href="./reports.html"><button class="nav-btn">Reports</button></a>
+            <a href="./goals.html"><button class="nav-btn">Goals</button></a>
+            <a href="./dashboard.html"><button class="nav-btn">Dashboard</button></a>
+        </aside>
 
-    <h2>Analysis:</h2>
-    <pre id="analysis-output"></pre>
+        <!-- Main Content -->
+        <section class="dashboard">
+            <div class="predictions-section">
+                <h3>Cash Flow Prediction</h3>
+                <button onclick="generatePredictions()">Generate Predictions</button>
+                <h2 id="predictions-heading">Future Cash Flow Predictions</h2>
+                <a id="toggle-link" class="toggle-link" data-view="future" onclick="toggleView()">View Past Predictions</a>
+                <div id="predictions-output"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="analysis-modal" class="modal">
+        <div id="modal-content" class="modal-content"></div>
+    </div>
 </body>
 </html>
