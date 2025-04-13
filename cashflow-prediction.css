@@ -1,0 +1,469 @@
+/* Reset Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Local Font Definitions */
+@font-face {
+    font-family: 'Roboto';
+    src: url('assets/fonts/Roboto-Regular.woff2') format('woff2'),
+         url('assets/fonts/Roboto-Regular.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('assets/fonts/Roboto-Medium.woff2') format('woff2'),
+         url('assets/fonts/Roboto-Medium.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('assets/fonts/Roboto-Bold.woff2') format('woff2'),
+         url('assets/fonts/Roboto-Bold.woff') format('woff');
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* General Body Styling */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f5f5f5;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header Styling */
+.header {
+    background-color: white;
+    padding: 30px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+    height: 100px;
+}
+
+.header h2 {
+    font-size: 2rem;
+    color: #5071FF;
+    cursor: pointer;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    margin-right: 30px;
+}
+
+.logout-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    margin-left: 10px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background-color: #6485FF;
+    border-radius: 15px;
+    justify-content: center;
+}
+
+.tab-btn {
+    background-color: #6485FF;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    border-radius: 10px;
+    cursor: pointer;
+    color: white;
+}
+
+.tab-btn.active {
+    background-color: #2D3F8E;
+    color: white;
+}
+
+/* Icon Styling */
+.header-right .icon {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+/* Main Layout */
+main {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    height: calc(100vh - 100px);
+    background-color: #fff;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 20%;
+    background-color: #007AFF;
+    color: white;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 21px;
+    gap: 25px;
+    margin: 20px;
+    flex-shrink: 0;
+}
+
+/* Button Styling Inside Sidebar */
+.sidebar button {
+    background-color: white;
+    color: #000000;
+    border: none;
+    padding: 20px;
+    font-size: 1.4rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+}
+
+.sidebar button:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+/* Dashboard Section */
+.dashboard {
+    flex: 1;
+    padding: 20px;
+    background-color: #fff;
+    overflow-y: auto;
+    margin: 20px;
+    border-radius: 21px;
+}
+
+/* Predictions Section */
+.predictions-section {
+    background-color: transparent; /* No blue background */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Align content to the left */
+}
+
+.predictions-section h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: #000;
+}
+
+.predictions-section button {
+    background-color: #007AFF;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.predictions-section button:hover {
+    background-color: #0056b3;
+}
+
+.predictions-section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    color: #000;
+}
+
+/* Toggle Link */
+.toggle-link {
+    color: #007bff;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+.toggle-link:hover {
+    color: #0056b3;
+}
+
+/* Predictions Container */
+.predictions-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: flex-start; /* Align predictions to the left */
+    width: 100%;
+}
+
+.prediction-window {
+    background: white;
+    width: 280px;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.prediction-window:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.prediction-title {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.prediction-amount {
+    font-size: 1.1rem;
+    color: #28a745;
+    margin: 0.5rem 0;
+}
+
+.prediction-actual {
+    font-size: 1.1rem;
+    color: #e74c3c;
+    margin: 0.5rem 0;
+}
+
+/* Loader */
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 1rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error and Info Messages */
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem auto;
+    max-width: 600px;
+    text-align: center;
+}
+
+.info-message {
+    background-color: #e2f0ff;
+    color: #0c5460;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem auto;
+    max-width: 600px;
+    text-align: center;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #333;
+}
+
+.analysis-section {
+    margin-bottom: 1.5rem;
+}
+
+.analysis-section h3 {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+canvas {
+    max-width: 100%;
+    margin: 1rem 0;
+}
+
+/* Notification Panel */
+.notification-panel {
+    display: none;
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 280px;
+    background: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    z-index: 1000;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.notification-panel h3 {
+    margin: 0 0 10px;
+    font-size: 1.2rem;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+}
+
+.notification-panel ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.notification-panel ul li {
+    padding: 8px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.notification-panel ul li:last-child {
+    border-bottom: none;
+}
+
+.notification-panel button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.notification-panel button:hover {
+    background: #0056b3;
+}
+
+.show-panel {
+    display: block;
+    opacity: 1;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        border-radius: 0;
+    }
+
+    .dashboard {
+        margin: 0;
+    }
+
+    .predictions-section {
+        align-items: center; /* Center content on mobile */
+    }
+
+    .predictions-container {
+        justify-content: center;
+    }
+
+    .notification-panel {
+        top: 80px;
+        width: 90%;
+        right: 5%;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h2 {
+        font-size: 1.2rem;
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
+
+    .tab-btn {
+        font-size: 0.9rem;
+    }
+
+    .header-right {
+        gap: 15px;
+        margin-right: 15px;
+    }
+
+    .logout-btn {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    .predictions-section h3 {
+        font-size: 1.2rem;
+    }
+
+    .predictions-section h2 {
+        font-size: 1.5rem;
+    }
+}

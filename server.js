@@ -608,85 +608,87 @@ changeStream.on("change", async (change) => {
 
 
 //temp
-
+console.log('Attempting to import CashFlowPrediction and CashFlowPredictor');
 const { CashFlowPrediction, CashFlowPredictor } = require('./cashflow-prediction');
- // Ensure Transaction model is imported
+console.log('Imported:', { CashFlowPrediction, CashFlowPredictor });
 
-// Generate Cash Flow Predictions
 app.post('/api/cash-flow/generate-predictions', async (req, res) => {
   try {
-    // Fetch all transactions from the database, ordered by transactionId
-    const transactions = await Transaction.find({}).sort({ transactionId: 1 });
-
-    if (!transactions.length) {
-      return res.status(400).json({ error: 'No transactions available for prediction' });
-    }
-
-    const predictor = new CashFlowPredictor(transactions);
-    const predictions = await predictor.savePredictions();
-
-    res.status(200).json({ 
-      message: 'Cash flow predictions generated successfully',
-      predictions
-    });
+      console.log('Handling /api/cash-flow/generate-predictions');
+      const transactions = await Transaction.find({}).sort({ transactionId: 1 });
+      if (!transactions.length) {
+          return res.status(400).json({ error: 'No transactions available for prediction' });
+      }
+      console.log('Creating CashFlowPredictor instance');
+      const predictor = new CashFlowPredictor(transactions);
+      console.log('Generating predictions');
+      const result = await predictor.generatePredictions();
+      res.status(200).json({ 
+          message: 'Cash flow predictions generated successfully',
+          predictions: result.predictions
+      });
   } catch (error) {
-    console.error('Error generating cash flow predictions:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate predictions',
-      message: error.message
-    });
+      console.error('Error generating cash flow predictions:', error);
+      res.status(500).json({ 
+          error: 'Failed to generate predictions',
+          message: error.message
+      });
   }
 });
 
-// Get Cash Flow Predictions
 app.get('/api/cash-flow/predictions', async (req, res) => {
   try {
-    const { months } = req.query;
-    const query = {};
-
-    if (months) {
-      const requestedMonths = months.split(',');
-      query.month = { $in: requestedMonths };
-    }
-
-    const predictions = await CashFlowPrediction.find(query).sort({ month: 1 });
-
-    res.status(200).json(predictions);
+      console.log('Handling /api/cash-flow/predictions');
+      const { direction } = req.query;
+      const today = new Date();
+      const currentMonth = today.toISOString().slice(0, 7);
+      const query = direction === 'past' 
+          ? { month: { $lte: currentMonth } }
+          : { month: { $gte: currentMonth } };
+      const predictions = await CashFlowPrediction.find(query).sort({ month: 1 });
+      res.status(200).json(predictions);
   } catch (error) {
-    console.error('Error fetching cash flow predictions:', error);
-    res.status(500).json({ error: 'Failed to fetch predictions' });
+      console.error('Error fetching cash flow predictions:', error);
+      res.status(500).json({ error: 'Failed to fetch predictions', message: error.message });
   }
 });
 
-// Get Detailed Cash Flow Analysis
+app.post('/api/cash-flow/set-actual', async (req, res) => {
+  try {
+      const { month, actualCashFlow } = req.body;
+      if (!month || actualCashFlow == null) {
+          return res.status(400).json({ error: 'Month and actualCashFlow are required' });
+      }
+      const result = await CashFlowPrediction.findOneAndUpdate(
+          { month },
+          { actualCashFlow },
+          { new: true }
+      );
+      if (!result) {
+          return res.status(404).json({ error: 'Prediction not found' });
+      }
+      res.status(200).json({ message: 'Actual cash flow updated', prediction: result });
+  } catch (error) {
+      console.error('Error setting actual cash flow:', error);
+      res.status(500).json({ error: 'Failed to set actual cash flow', message: error.message });
+  }
+});
+
 app.get('/api/cash-flow/analysis', async (req, res) => {
   try {
-    // Fetch all transactions from the database, ordered by transactionId
-    const transactions = await Transaction.find({}).sort({ transactionId: 1 });
-
-    if (!transactions.length) {
-      return res.status(400).json({ error: 'No transactions available for analysis' });
-    }
-
-    const predictor = new CashFlowPredictor(transactions);
-    const analysisData = await predictor.generatePredictions();
-
-    res.status(200).json({
-      predictions: analysisData.predictions,
-      recurringTransactions: analysisData.recurringTransactions,
-      seasonalFactors: analysisData.seasonalFactors,
-      growthTrends: analysisData.growthTrends
-    });
+      const { month } = req.query;
+      if (!month) {
+          return res.status(400).json({ error: 'Month is required' });
+      }
+      const transactions = await Transaction.find({}).sort({ transactionId: 1 });
+      const predictor = new CashFlowPredictor(transactions);
+      const analysis = await predictor.getAnalysis(month);
+      res.status(200).json(analysis);
   } catch (error) {
-    console.error('Error generating cash flow analysis:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate analysis',
-      message: error.message
-    });
+      console.error('Error fetching analysis:', error);
+      res.status(500).json({ error: 'Failed to fetch analysis', message: error.message });
   }
 });
-
-
 //till this is temp
 
 // Start Server
