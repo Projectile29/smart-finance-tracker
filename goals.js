@@ -132,7 +132,6 @@ function editGoal(goalId) {
     modal.style.display = "block";
 }
 
-
 async function saveGoal() {
     const goalName = document.getElementById("goalName").value;
     const targetAmount = document.getElementById("targetAmount").value;

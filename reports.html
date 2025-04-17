@@ -4,44 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reports - Smart Finance Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="reports.css">
 </head>
 <body>
-  <!-- Header Section -->
-  <header class="header">
-    <h2 class="title">Smart Finance Tracker</h2>
-    <div class="header-right">
-      <a href="./dashboard.html"><img src="assets/home-icon.png" alt="Home" class="icon"></a>
-      <img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
-      <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon"></a>
-    </div>
-    <!-- Notification Panel -->
-    <div id="notificationPanel" class="notification-panel">
-      <h3>Notifications</h3>
-      <ul id="notificationList"></ul>
-      <button onclick="clearNotifications()">Clear All</button>
-    </div>
-  </header>
+  <aside class="sidebar">
+    <a href="./expense.html"><i class="fas fa-wallet"></i> Expenses</a>
+    <a href="./budget.html"><i class="fas fa-coins"></i> Budget</a>
+    <a href="./reports.html"><i class="fas fa-chart-bar"></i> Reports</a>
+    <a href="./goals.html"><i class="fas fa-bullseye"></i> Goals</a>
+    <a href="./cashflow-prediction.html"><i class="fas fa-wave-square"></i> Cash Flow</a>
+  </aside>
 
-  <div class="page-container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
-      <a href="./budget.html"><button class="nav-btn">Budget</button></a>
-      <a href="./reports.html"><button class="nav-btn active">Reports</button></a>
-      <a href="./goals.html"><button class="nav-btn">Goals</button></a>
-    </aside>
+  <div class="main">
+    <header>
+      <h2>Smart Finance Tracker</h2>
+      <div class="header-actions">
+        <a href="./dashboard.html"><i class="fas fa-home fa-2x"></i></a>
+        <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
+        <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
+        <button class="logout-btn">Logout</button>
+      </div>
+    </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
+    <section class="content">
       <div class="container">
         <h1>Financial Reports</h1>
 
         <!-- Filters -->
-        <div class="filters">
+        <div class="card filters">
           <div class="filter-group">
             <label for="from-date">Date Range:</label>
             <input type="date" id="from-date">
@@ -61,15 +54,15 @@
 
         <!-- Summary Cards -->
         <div class="summary-cards">
-          <div class="summary-card">
+          <div class="card summary-card">
             <h3>Previous Day Expenses</h3>
             <p id="prev-day-expenses">₹0</p>
           </div>
-          <div class="summary-card">
+          <div class="card summary-card">
             <h3>Total Expenses</h3>
             <p id="total-expenses">₹0</p>
           </div>
-          <div class="summary-card">
+          <div class="card summary-card">
             <h3>Total Income</h3>
             <p id="total-income">₹0</p>
           </div>
@@ -77,27 +70,27 @@
 
         <!-- Graphs Section -->
         <div class="graphs">
-          <div class="graph-card">
+          <div class="card graph-card">
             <h3>Daily Expenses</h3>
             <canvas id="dailyExpensesChart"></canvas>
           </div>
-          <div class="graph-card">
+          <div class="card graph-card">
             <h3>Weekly Expenses & Income</h3>
             <canvas id="weeklyChart"></canvas>
           </div>
-          <div class="graph-card">
+          <div class="card graph-card">
             <h3>Monthly Expenses & Income</h3>
             <canvas id="monthlyChart"></canvas>
           </div>
-          <div class="graph-card">
+          <div class="card graph-card">
             <h3>Yearly Expenses & Income</h3>
             <canvas id="yearlyChart"></canvas>
           </div>
-          <div class="graph-card">
+          <div class="card graph-card">
             <h3>Category Breakdown</h3>
             <canvas id="categoryChart"></canvas>
           </div>
-          <div class="graph-card">
+          <div class="card graph-card">
             <h3>Trend Analysis</h3>
             <canvas id="trendChart"></canvas>
           </div>
@@ -109,7 +102,14 @@
           <button onclick="downloadReport('csv')">Download CSV</button>
         </div>
       </div>
-    </main>
+
+      <!-- Notification Panel -->
+      <div id="notificationPanel" class="notification-panel">
+        <h3>Notifications</h3>
+        <ul id="notificationList"></ul>
+        <button onclick="clearNotifications()">Clear All</button>
+      </div>
+    </section>
   </div>
 
   <script defer src="reports.js"></script>

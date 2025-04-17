@@ -3,48 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Goals</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
-  <link rel="stylesheet" href="goals.css">
+  <title>Goals - Smart Finance Tracker</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="goals.css">
   <link rel="icon" href="data:,">
 </head>
 <body>
-  
-  <!-- Header -->
-  <header class="header">
-    <h2>Smart Finance Tracker</h2>
-    <div class="header-right">
-      <a href="./dashboard.html"><img src="assets/home-icon.png" alt="Home" class="icon"></a>
-      <img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
-      <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon"></a>
-    </div>
-    <div id="notificationPanel" class="notification-panel">
-      <h3>Notifications</h3>
-      <ul id="notificationList"></ul>
-      <button onclick="clearNotifications()">Clear All</button>
-    </div>
-  </header>
+  <aside class="sidebar">
+    <a href="./expense.html"><i class="fas fa-wallet"></i> Expenses</a>
+    <a href="./budget.html"><i class="fas fa-coins"></i> Budget</a>
+    <a href="./reports.html"><i class="fas fa-chart-bar"></i> Reports</a>
+    <a href="./goals.html"><i class="fas fa-bullseye"></i> Goals</a>
+    <a href="./cashflow-prediction.html"><i class="fas fa-wave-square"></i> Cash Flow</a>
+  </aside>
 
-  <main>
-    <aside class="sidebar">
-      <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
-      <a href="./budget.html"><button class="nav-btn">Budget</button></a>
-      <a href="./reports.html"><button class="nav-btn">Reports</button></a>
-      <a href="./goals.html"><button class="nav-btn active">Goals</button></a>
-    </aside>
+  <div class="main">
+    <header>
+      <h2>Smart Finance Tracker</h2>
+      <div class="header-actions">
+        <a href="./dashboard.html"><i class="fas fa-home fa-2x"></i></a>
+        <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
+        <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
+        <button class="logout-btn">Logout</button>
+      </div>
+    </header>
 
-    <!-- Goals Section -->
     <section class="content">
-      <div class="goals-header">
+      <div class="card goals-header">
         <h2>Goals</h2>
         <button id="addGoalBtn">Add Goal</button>
       </div>
 
-      <div id="goalsContainer" class="goals-container"></div>
-      
-      <!-- AI-Based Goal Projection Section -->
-      <div class="goal-projection">
+      <div id="goalsContainer" class="card goals-container"></div>
+
+      <div class="card goal-projection">
         <h3>AI-Based Goal Projection</h3>
         <div class="goal-container">
           <p id="goalProgress">Projected Savings: ₹0.00</p>
@@ -54,40 +47,47 @@
         </div>
         <p id="completionDate">Projected Completion: Loading...</p>
       </div>
+
+      <!-- Notification Panel -->
+      <div id="notificationPanel" class="notification-panel">
+        <h3>Notifications</h3>
+        <ul id="notificationList"></ul>
+        <button onclick="clearNotifications()">Clear All</button>
+      </div>
     </section>
-  </main>
 
-  <!-- Add Goal Modal -->
-  <div id="goalModal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h3>Add Goal</h3>
-      <label for="goalName">Goal Name:</label>
-      <input type="text" id="goalName" />
-      <label for="targetAmount">Target Amount:</label>
-      <input type="number" id="targetAmount" />
-      <label for="currentSavings">Current Savings:</label>
-      <input type="number" id="currentSavings" />
-      <button id="saveGoalBtn">Save Goal</button>
+    <!-- Add Goal Modal -->
+    <div id="goalModal" class="modal">
+      <div class="modal-content">
+        <span class="close">×</span>
+        <h3>Add Goal</h3>
+        <label for="goalName">Goal Name:</label>
+        <input type="text" id="goalName">
+        <label for="targetAmount">Target Amount:</label>
+        <input type="number" id="targetAmount">
+        <label for="currentSavings">Current Savings:</label>
+        <input type="number" id="currentSavings">
+        <button id="saveGoalBtn">Save Goal</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Edit Goal Modal -->
-  <div id="editGoalModal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h3>Edit Goal</h3>
-      <input type="hidden" id="editGoalId" />
-      <label for="editGoalName">Goal Name:</label>
-      <input type="text" id="editGoalName" />
-      <label for="editTargetAmount">Target Amount:</label>
-      <input type="number" id="editTargetAmount" />
-      <label for="editCurrentSavings">Current Savings:</label>
-      <input type="number" id="editCurrentSavings" />
-      <button id="saveEditGoalBtn">Save Changes</button>
+    <!-- Edit Goal Modal -->
+    <div id="editGoalModal" class="modal">
+      <div class="modal-content">
+        <span class="close">×</span>
+        <h3>Edit Goal</h3>
+        <input type="hidden" id="editGoalId">
+        <label for="editGoalName">Goal Name:</label>
+        <input type="text" id="editGoalName">
+        <label for="editTargetAmount">Target Amount:</label>
+        <input type="number" id="editTargetAmount">
+        <label for="editCurrentSavings">Current Savings:</label>
+        <input type="number" id="editCurrentSavings">
+        <button id="saveEditGoalBtn">Save Changes</button>
+      </div>
     </div>
   </div>
 
   <script src="goals.js"></script>
 </body>
-</html>
+</html> 

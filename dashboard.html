@@ -4,76 +4,58 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Finance Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
-  <link rel="stylesheet" href="dashboard.css">
-  <!-- Font Awesome for Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="dashboard.css">
   <script defer src="dashboard.js"></script>
 </head>
 <body>
-    <!-- Header Section -->
-    <header class="header">
-        <h2>Smart Finance Tracker</h2>
-       <!--<div class="tabs">
-            <button class="tab-btn active">Monthly</button>
-            <button class="tab-btn">Yearly</button>
-            <button class="tab-btn">Today <i class="calendar-icon"></i></button>
-        </div> --> 
-        <div class="header-right">
-             <!-- Notification Bell Icon (Add inside header) -->
-<img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
+  <aside class="sidebar">
+    <a href="./expense.html"><i class="fas fa-wallet"></i> Expenses</a>
+    <a href="./budget.html"><i class="fas fa-coins"></i> Budget</a>
+    <a href="./reports.html"><i class="fas fa-chart-bar"></i> Reports</a>
+    <a href="./goals.html"><i class="fas fa-bullseye"></i> Goals</a>
+    <a href="./cashflow-prediction.html"><i class="fas fa-wave-square"></i> Cash Flow</a>
+  </aside>
 
-            <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon profile"></a>
-            <button id="logout-btn" class="logout-btn">Logout</button>
-
-        </div>
-        <!-- Notification Popup Panel -->
-<div id="notificationPanel" class="notification-panel">
-    <h3>Notifications</h3>
-    <ul id="notificationList">
-        <!-- Notifications will be dynamically added -->
-    </ul>
-    <button onclick="clearNotifications()">Clear All</button>
-</div>
+  <div class="main">
+    <header>
+      <h2>Smart Finance Tracker</h2>
+      <div class="header-actions">
+        <button class="toggle-btn" onclick="toggleMode()">Toggle Mode</button>
+        <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
+        <button class="logout-btn">Logout</button>
+      </div>
     </header>
 
-    <main>
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
-            <a href="./budget.html"><button class="nav-btn">Budget</button></a>
-            <a href="./reports.html"><button class="nav-btn">Reports</button></a>
-            <a href="./goals.html"><button class="nav-btn">Goals</button></a>
-            <a href="./cashflow-prediction.html"><button class="nav-btn">Cash Flow</button></a>
-        </aside>
-
-        <!-- Dashboard Content -->
-        <section class="dashboard">
-            <div class="card">Total Expenses<br>₹50,000</div>
-            <div class="card">Savings Overview<br>₹50,000</div>
-            <div class="card">Remaining Budget<br>₹<span id="remaining-budget">Loading...</span></div>
-            <div class="card">
-                Income Goal<br>
-                <div class="progress-bar">
-                    <div class="progress" style="width: 67%;"></div>
-                </div>
-            </div>
-            <div class="card" id="income-card">Income<br>₹<span id="income-amount"></span></div>
-            <div class="card large">Monthly Tracking</div>
-            <div class="card large">Spending</div>
-        </section>
-    </main>
-
-    <!-- Tab Content Sections -->
-    <section class="content-section monthly" style="display: none;">
-        <p>Monthly Data</p>
+    <section class="dashboard">
+      <div class="card" id="total-expenses-card">Total Expenses<br>Loading...</div>
+      <div class="card" id="savings-overview-card">Savings Overview<br>₹50,000</div>
+      <div class="card" id="remaining-budget-card">Remaining Budget<br>₹<span id="remaining-budget">Loading...</span></div>
+      <div class="card">
+        Income Goal<br>
+        <div style="width: 100%; background: #eee; border-radius: 10px; height: 10px;">
+          <div style="width: 67%; height: 100%; background: var(--primary); border-radius: 10px;"></div>
+        </div>
+      </div>
+      <div class="card" id="income-card">Income<br>₹<span id="income-amount">Loading...</span></div>
+      <div class="card" style="grid-column: span 2;">
+        <h4>Monthly Spending</h4>
+        <canvas id="spendingChart"></canvas>
+      </div>
     </section>
-    <section class="content-section yearly" style="display: none;">
-        <p>Yearly Data</p>
-    </section>
-    <section class="content-section today" style="display: none;">
-        <p>Today's Data</p>
-    </section>
+  </div>
 
+  <script>
+    function toggleMode() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+    }
+
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark');
+    }
+  </script>
 </body>
 </html>

@@ -4,92 +4,93 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Expenses</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="expense.css">
 </head>
 <body>
-    <header class="header">
-        <h2>Smart Finance Tracker</h2>
-        <div class="header-right">
-            <a href="./dashboard.html"><img src="assets/home-icon.png" alt="home" class="icon search"></a>
-            <a href="./profile.html"><img src="assets/profile-icon.png" alt="Profile" class="icon profile"></a>
-        </div>
+  <aside class="sidebar">
+    <a href="./expense.html"><i class="fas fa-wallet"></i> Expenses</a>
+    <a href="./budget.html"><i class="fas fa-coins"></i> Budget</a>
+    <a href="./reports.html"><i class="fas fa-chart-bar"></i> Reports</a>
+    <a href="./goals.html"><i class="fas fa-bullseye"></i> Goals</a>
+    <a href="./cashflow-prediction.html"><i class="fas fa-wave-square"></i> Cash Flow</a>
+  </aside>
+
+  <div class="main">
+    <header>
+      <h2>Smart Finance Tracker</h2>
+      <div class="header-actions">
+        <a href="./dashboard.html"><i class="fas fa-home fa-2x"></i></a>
+        <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
+        <button class="logout-btn">Logout</button>
+      </div>
     </header>
 
-    <main>
-        <aside class="sidebar">
-            <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
-            <a href="./budget.html"><button class="nav-btn">Budget</button></a>
-            <button class="nav-btn">Reports</button>
-            <a href="./goals.html"><button class="nav-btn">Goals</button></a>
-        </aside>
+    <section class="expense-tracking">
+      <h2>Expense Tracking</h2>
+      <button class="add-expense" onclick="openExpenseForm()">+ Expense</button>
 
-        <section class="expense-tracking">
-            <h2>Expense Tracking</h2>
-            <br>
-            <button class="add-expense" onclick="openExpenseForm()">+ Expense</button>
+      <!-- Expense Form (Hidden Initially) -->
+      <div id="expense-form" class="expense-form">
+        <h3>Add Expense</h3>
+        <label for="category">Category:</label>
+        <input type="text" id="category" placeholder="Enter category">
 
-            <!-- Expense Form (Hidden Initially) -->
-            <div id="expense-form" class="expense-form">
-                <h3>Add Expense</h3>
-                <label for="category">Category:</label>
-                <input type="text" id="category" placeholder="Enter category">
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" placeholder="Enter amount">
 
-                <label for="amount">Amount:</label>
-                <input type="number" id="amount" placeholder="Enter amount">
+        <label for="date">Date:</label>
+        <input type="date" id="date">
 
-                <label for="date">Date:</label>
-                <input type="date" id="date">
+        <div class="form-buttons">
+          <button onclick="addExpense()">Add</button>
+          <button onclick="closeExpenseForm()">Cancel</button>
+        </div>
+      </div>
 
-                <div class="form-buttons">
-                    <button onclick="addExpense()">Add</button>
-                    <button onclick="closeExpenseForm()">Cancel</button>
-                </div>
-            </div>
+      <!-- Daily Expenses Table -->
+      <div class="card expenses-table">
+        <h3>Daily Expenses</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Transaction ID</th>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-body">
+            <!-- Data will be inserted dynamically -->
+          </tbody>
+        </table>
+        <button id="view-all-btn">View All</button>
+      </div>
 
-            <!-- Daily Expenses Table -->
-            <div class="expenses-table">
-                <h3>Daily Expenses</h3>
-                <br>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Transaction id</th>
-                            <th>Date</th>
-                            <th>Category</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactions-body">
-                        <!-- Data will be inserted dynamically -->
-                    </tbody>
-                </table>
-                <button id="view-all-btn">View All</button>
-            </div>
+      <!-- Total Expenses -->
+      <div class="card total-expenses">
+        <h3>Total Expenses</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Personal</td>
+              <td>Grocery</td>
+              <td>250</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 
-            <!-- Total Expenses -->
-            <div class="total-expenses">
-                <h3>Total Expenses</h3>
-                <br>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Category</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Personal</td>
-                            <td>Grocery</td>
-                            <td>250</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-    <script defer src="expense.js"></script>
+  <script defer src="expense.js"></script>
 </body>
 </html>

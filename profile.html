@@ -4,31 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Smart Finance Tracker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="profile.css">
 </head>
 <body>
-    <header class="header">
-        <h2>Smart Finance Tracker</h2>
-        <div class="header-right">
-            <a href="./dashboard.html"><img src="assets/home-icon.png" alt="home" class="icon"></a>
-            <img src="assets/notification-icon.png" alt="Notifications" class="icon notification-bell" onclick="toggleNotifications()">
-        </div>
-        <div id="notificationPanel" class="notification-panel">
-            <h3>Notifications</h3>
-            <ul id="notificationList"></ul>
-            <button onclick="clearNotifications()">Clear All</button>
-        </div>
-    </header>
-    <main>
-        <aside class="sidebar">
-            <a href="./expense.html"><button class="nav-btn">Expenses</button></a>
-            <a href="./budget.html"><button class="nav-btn">Budget</button></a>
-            <button class="nav-btn">Reports</button>
-            <a href="./goals.html"><button class="nav-btn">Goals</button></a>
-        </aside>
+    <aside class="sidebar">
+        <a href="./expense.html"><i class="fas fa-wallet"></i> Expenses</a>
+        <a href="./budget.html"><i class="fas fa-coins"></i> Budget</a>
+        <a href="./reports.html"><i class="fas fa-chart-bar"></i> Reports</a>
+        <a href="./goals.html"><i class="fas fa-bullseye"></i> Goals</a>
+        <a href="./cashflow-prediction.html"><i class="fas fa-wave-square"></i> Cash Flow</a>
+    </aside>
+
+    <div class="main">
+        <header>
+            <h2>Smart Finance Tracker</h2>
+            <div class="header-actions">
+                <a href="./dashboard.html"><i class="fas fa-home fa-2x"></i></a>
+                <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
+                <button class="logout-btn">Logout</button>
+            </div>
+        </header>
+
         <section class="content">
-            <div class="profile">
+            <div class="card profile">
                 <div class="profile-header">
                     <div class="profile-pic-container">
                         <label for="profile-pic-input">
@@ -46,19 +46,22 @@
                     <label>DOB: <input type="date" id="dob"></label>
                     <label>Gender: <input type="text" id="gender"></label>
                     <label>Country: <input type="text" id="country"></label>
-                    
-                    <!-- New Fields Below Country -->
                     <label>State: <input type="text" id="state"></label>
                     <label>Salary Amount: <input type="number" id="salary-amount" placeholder="Enter your salary"></label>
                     <label>Salary Day: <input type="number" id="salary-day" placeholder="Day of the month"></label>
-                    
-                    <div class="container">
-                        <button class="save-btn" onclick="saveProfile()">Save</button>
-                    </div>
+                    <button class="save-btn" onclick="saveProfile()">Save</button>
                 </div>
             </div>
+
+            <!-- Notification Panel -->
+            <div id="notificationPanel" class="notification-panel">
+                <h3>Notifications</h3>
+                <ul id="notificationList"></ul>
+                <button onclick="clearNotifications()">Clear All</button>
+            </div>
         </section>
-    </main>
+    </div>
+
     <script src="profile.js"></script>
 </body>
 </html>
