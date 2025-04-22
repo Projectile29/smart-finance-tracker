@@ -228,8 +228,7 @@ class CashFlowPredictor {
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
         const recentTransactions = this.transactions.filter(tx => new Date(tx.date) >= twelveMonthsAgo);
-        
-        // Historical cash flows
+
         const monthlyData = recentTransactions.reduce((acc, tx) => {
             const m = new Date(tx.date).toISOString().slice(0, 7);
             if (!acc[m]) acc[m] = { income: 0, expenses: 0, categories: {} };
@@ -241,29 +240,56 @@ class CashFlowPredictor {
             acc[m].categories[tx.category] = (acc[m].categories[tx.category] || 0) + tx.amount;
             return acc;
         }, {});
-        
+
         const historicalMonths = Object.keys(monthlyData).sort();
         const historicalCashFlows = historicalMonths.map(m => monthlyData[m].income - monthlyData[m].expenses);
-        
-        // Category breakdown for the predicted month
+
         const prediction = await CashFlowPrediction.findOne({ month });
-        const categoryBreakdown = {};
+
+        const actualData = monthlyData[month] || null;
+        let actualCashFlow = null;
+        let actualIncome = null;
+        let actualExpenses = null;
+        let actualCategoryBreakdown = {};
+
+        if (actualData) {
+            actualCashFlow = actualData.income - actualData.expenses;
+            actualIncome = actualData.income;
+            actualExpenses = actualData.expenses;
+            actualCategoryBreakdown = actualData.categories || {};
+        }
+
+        let predictedCategoryBreakdown = {};
         if (prediction) {
             const lastMonthData = monthlyData[historicalMonths[historicalMonths.length - 1]] || { categories: {} };
-            Object.keys(lastMonthData.categories).forEach(cat => {
-                categoryBreakdown[cat] = lastMonthData.categories[cat] || 0;
-            });
+            const rawCategories = lastMonthData.categories || {};
+            const totalRaw = Object.values(rawCategories).reduce((sum, val) => sum + val, 0);
+            const predicted = prediction.predictedCashFlow;
+
+            if (totalRaw !== 0) {
+                Object.entries(rawCategories).forEach(([cat, val]) => {
+                    predictedCategoryBreakdown[cat] = Math.round((val / totalRaw) * predicted);
+                });
+
+                const diff = predicted - Object.values(predictedCategoryBreakdown).reduce((a, b) => a + b, 0);
+                const firstKey = Object.keys(predictedCategoryBreakdown)[0];
+                if (firstKey) predictedCategoryBreakdown[firstKey] += diff;
+            }
         }
-        
+
         return {
             historicalMonths: historicalMonths.map(m => formatMonth(m)),
             historicalCashFlows,
-            categoryBreakdown
+            categoryBreakdown: predictedCategoryBreakdown,
+            predictedCashFlow: prediction?.predictedCashFlow || null,
+            actualCashFlow,
+            actualIncome,
+            actualExpenses,
+            actualCategoryBreakdown
         };
     }
 }
 
-// Format month for analysis
 function formatMonth(monthStr) {
     try {
         const date = new Date(monthStr + "-01");

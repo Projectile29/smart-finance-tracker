@@ -32,24 +32,26 @@
 
         <section class="content">
             <div class="card predictions-section">
-                <h3>Cash Flow Prediction</h3>
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="fetchPredictions('future')">Future</button>
-                    <button class="tab-btn" onclick="fetchPredictions('past')">Past</button>
-                </div>
+                <h3>📈 Cash Flow Forecast</h3>
+                <!-- Toggle Switch -->
+            <!-- Toggle Switch -->
+            <div class="toggle-switch-container">
+                <label class="switch">
+                <input type="checkbox" id="predictionToggle" onchange="toggleView()">
+                <span class="slider"></span>
+                </label>
+                <span id="toggle-label">Viewing Future Predictions</span>
+            </div>
+
+
                 <button onclick="generatePredictions()">Generate Predictions</button>
                 <h2 id="predictions-heading">Future Cash Flow Predictions</h2>
                 <a id="toggle-link" class="toggle-link" data-view="future" onclick="toggleView()">View Past Predictions</a>
                 <div id="predictions-output"></div>
             </div>
+            
 
-            <!-- Notification Panel -->
-            <div id="notificationPanel" class="notification-panel">
-                <h3>Notifications</h3>
-                <ul id="notificationList"></ul>
-                <button onclick="clearNotifications()">Clear All</button>
-            </div>
-        </section>
+           
 
         <!-- Modal -->
         <div id="analysis-modal" class="modal">
@@ -115,113 +117,151 @@
 
         // Display Predictions
         function displayPredictions(predictions, showActual = false) {
-            const output = document.getElementById("predictions-output");
-            output.innerHTML = ""; // Clear previous results
+    const output = document.getElementById("predictions-output");
+    output.innerHTML = ""; // Clear previous results
 
-            if (predictions.length === 0) {
-                output.innerHTML = "<p>No predictions available.</p>";
-                return;
-            }
+    if (predictions.length === 0) {
+        output.innerHTML = "<p>No predictions available.</p>";
+        return;
+    }
 
-            const container = document.createElement("div");
-            container.className = "predictions-container";
-            
-            predictions.forEach(prediction => {
-                const window = document.createElement("div");
-                window.className = "prediction-window";
-                
-                let content = `
-                    <div class="prediction-title">${formatMonth(prediction.month)}</div>
-                    <div class="prediction-amount">Predicted: ₹${prediction.predictedCashFlow.toLocaleString('en-IN')}</div>
-                `;
-                
-                if (showActual && prediction.actualCashFlow != null) {
-                    content += `<div class="prediction-actual">Actual: ₹${prediction.actualCashFlow.toLocaleString('en-IN')}</div>`;
-                }
-                
-                window.innerHTML = content;
-                window.onclick = () => showAnalysisModal(prediction, showActual);
-                container.appendChild(window);
-            });
-            
-            output.appendChild(container);
-        }
+    const container = document.createElement("div");
+    container.className = "predictions-container";
+
+    let totalActual = 0;
+
+    predictions.forEach(prediction => {
+        const window = document.createElement("div");
+        window.className = "prediction-window";
+
+        let content = `
+            <div class="prediction-title">${formatMonth(prediction.month)}</div>
+            <div class="prediction-amount">Predicted: ₹${prediction.predictedCashFlow.toLocaleString('en-IN')}</div>
+        `;
+
+        if (showActual) {
+    if (prediction.actualCashFlow != null) {
+        content += `<div class="prediction-actual">Set Actual: ₹${prediction.actualCashFlow.toLocaleString('en-IN')}</div>`;
+    }
+
+    if (prediction.totalActualAmount != null) {
+        content += `<div class="prediction-actual">Total Actual (from data): ₹${prediction.totalActualAmount.toLocaleString('en-IN')}</div>`;
+    }
+}
+
+        window.innerHTML = content;
+        window.onclick = () => showAnalysisModal(prediction, showActual);
+        container.appendChild(window);
+    });
+  
+    output.appendChild(container);
+}
+
 
         // Show Analysis Modal
         async function showAnalysisModal(prediction, showActual) {
-            const modal = document.getElementById("analysis-modal");
-            const modalContent = document.getElementById("modal-content");
-            modalContent.innerHTML = `
-                <span class="close-button" onclick="closeModal()">×</span>
-                <h2>Analysis for ${formatMonth(prediction.month)}</h2>
+    const modal = document.getElementById("analysis-modal");
+    const modalContent = document.getElementById("modal-content");
+    modalContent.innerHTML = `
+        <span class="close-button" onclick="closeModal()">×</span>
+        <h2>Analysis for ${formatMonth(prediction.month)}</h2>
+        <div class="analysis-section">
+            <h3>Breakdown</h3>
+            ${prediction.predictedCashFlow != null ? `<p>Predicted Cash Flow: ₹${prediction.predictedCashFlow.toLocaleString('en-IN')}</p>` : ''}
+        </div>
+        <div class="analysis-section">
+            <h3>Cash Flow Trend</h3>
+            <canvas id="cashFlowChart"></canvas>
+        </div>
+        <div class="analysis-section">
+            <h3>Predicted Category Breakdown</h3>
+            <canvas id="categoryChart"></canvas>
+        </div>
+    `;
+
+    modal.style.display = "flex";
+
+    try {
+        const response = await fetch(`http://localhost:5000/api/cash-flow/analysis?month=${prediction.month}`);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const analysis = await response.json();
+
+        // Cash Flow Chart
+        const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+        new Chart(cashFlowCtx, {
+            type: 'line',
+            data: {
+                labels: analysis.historicalMonths.concat([formatMonth(prediction.month)]),
+                datasets: [{
+                    label: 'Cash Flow (₹)',
+                    data: analysis.historicalCashFlows.concat([prediction.predictedCashFlow]),
+                    borderColor: '#007bff',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: false } }
+            }
+        });
+
+        // Predicted Category Breakdown Chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(categoryCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(analysis.categoryBreakdown),
+                datasets: [{
+                    label: 'Predicted (₹)',
+                    data: Object.values(analysis.categoryBreakdown),
+                    backgroundColor: '#4f46e5'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // Actual details and chart
+        if (showActual && analysis.actualCashFlow != null) {
+            modalContent.innerHTML += `
                 <div class="analysis-section">
-                    <h3>Breakdown</h3>
-                    <p>Predicted Cash Flow: ₹${prediction.predictedCashFlow.toLocaleString('en-IN')}</p>
-                    ${showActual && prediction.actualCashFlow != null ? `<p>Actual Cash Flow: ₹${prediction.actualCashFlow.toLocaleString('en-IN')}</p>` : ''}
+                    <h3>Actual Breakdown</h3>
+                    <p>Actual Cash Flow: ₹${analysis.actualCashFlow.toLocaleString('en-IN')}</p>
+                    <p>Income: ₹${analysis.actualIncome.toLocaleString('en-IN')}</p>
+                    <p>Expenses: ₹${analysis.actualExpenses.toLocaleString('en-IN')}</p>
                 </div>
                 <div class="analysis-section">
-                    <h3>Cash Flow Trend</h3>
-                    <canvas id="cashFlowChart"></canvas>
-                </div>
-                <div class="analysis-section">
-                    <h3>Category Breakdown</h3>
-                    <canvas id="categoryChart"></canvas>
+                    <h3>Actual Category Breakdown</h3>
+                    <canvas id="actualCategoryChart"></canvas>
                 </div>
             `;
-            
-            modal.style.display = "flex";
-            
-            try {
-                const response = await fetch(`http://localhost:5000/api/cash-flow/analysis?month=${prediction.month}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+
+            const actualCtx = document.getElementById('actualCategoryChart').getContext('2d');
+            new Chart(actualCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(analysis.actualCategoryBreakdown),
+                    datasets: [{
+                        label: 'Actual (₹)',
+                        data: Object.values(analysis.actualCategoryBreakdown),
+                        backgroundColor: '#ef4444'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
                 }
-                const analysis = await response.json();
-                
-                const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
-                new Chart(cashFlowCtx, {
-                    type: 'line',
-                    data: {
-                        labels: analysis.historicalMonths.concat([formatMonth(prediction.month)]),
-                        datasets: [{
-                            label: 'Cash Flow (₹)',
-                            data: analysis.historicalCashFlows.concat([prediction.predictedCashFlow]),
-                            borderColor: '#007bff',
-                            fill: false
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: { beginAtZero: false }
-                        }
-                    }
-                });
-                
-                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-                new Chart(categoryCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: Object.keys(analysis.categoryBreakdown),
-                        datasets: [{
-                            label: 'Amount (₹)',
-                            data: Object.values(analysis.categoryBreakdown),
-                            backgroundColor: ['#28a745', '#dc3545', '#ffc107', '#17a2b8']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-                
-            } catch (error) {
-                console.error('Error fetching analysis:', error);
-                modalContent.innerHTML += `<p class="error-message">Failed to load analysis: ${error.message}</p>`;
-            }
+            });
         }
+    } catch (error) {
+        console.error('Error fetching analysis:', error);
+        modalContent.innerHTML += `<p class="error-message">Failed to load analysis: ${error.message}</p>`;
+    }
+}
+
 
         // Close Modal
         function closeModal() {
@@ -241,13 +281,16 @@
 
         // Toggle between Future and Past Predictions
         function toggleView() {
-            const toggleLink = document.getElementById('toggle-link');
-            const currentView = toggleLink.getAttribute('data-view');
-            const newDirection = currentView === 'future' ? 'past' : 'future';
-            fetchPredictions(newDirection);
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`.tab-btn:nth-child(${newDirection === 'future' ? 1 : 2})`).classList.add('active');
-        }
+    const toggle = document.getElementById('predictionToggle');
+    const direction = toggle.checked ? 'past' : 'future';
+    fetchPredictions(direction);
+
+    const toggleLabel = document.getElementById('toggle-label');
+    toggleLabel.textContent = toggle.checked ? 'Viewing Past Predictions' : 'Viewing Future Predictions';
+
+    const heading = document.getElementById('predictions-heading');
+    heading.textContent = toggle.checked ? 'Past Cash Flow Predictions' : 'Future Cash Flow Predictions';
+    }
 
         // Update Toggle Link Text and Heading
         function updateToggleLink(direction) {

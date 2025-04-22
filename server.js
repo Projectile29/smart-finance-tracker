@@ -635,23 +635,63 @@ app.post('/api/cash-flow/generate-predictions', async (req, res) => {
       });
   }
 });
-
 app.get('/api/cash-flow/predictions', async (req, res) => {
   try {
-      console.log('Handling /api/cash-flow/predictions');
-      const { direction } = req.query;
-      const today = new Date();
-      const currentMonth = today.toISOString().slice(0, 7);
-      const query = direction === 'past' 
-          ? { month: { $lte: currentMonth } }
-          : { month: { $gte: currentMonth } };
-      const predictions = await CashFlowPrediction.find(query).sort({ month: 1 });
-      res.status(200).json(predictions);
+    const { direction } = req.query;
+    const today = new Date();
+    const currentMonthStr = today.toISOString().slice(0, 7);
+
+    let predictions = await CashFlowPrediction.find({}).sort({ month: 1 });
+
+    const seen = new Set();
+    predictions = predictions.filter(p => {
+      const month = p.month;
+      if (month === currentMonthStr) return false;
+      if (seen.has(month)) return false;
+      seen.add(month);
+      return (direction === 'past') ? (month < currentMonthStr) : (month > currentMonthStr);
+    });
+
+    if (direction === 'future') {
+      predictions = predictions.slice(0, 6);
+    }
+
+    if (direction === 'past') {
+      const allTransactions = await Transaction.find({});
+      const actualMap = {};
+
+      allTransactions.forEach(tx => {
+        const txMonth = new Date(tx.date).toISOString().slice(0, 7);
+        if (!actualMap[txMonth]) actualMap[txMonth] = { income: 0, expenses: 0 };
+
+        if (tx.amount > 0) {
+          actualMap[txMonth].income += tx.amount;
+        } else {
+          actualMap[txMonth].expenses += Math.abs(tx.amount);
+        }
+      });
+
+      predictions = predictions.map(p => {
+        const actual = actualMap[p.month];
+        const totalActualAmount = actual
+          ? Math.round(actual.income - actual.expenses)
+          : null;
+
+        return {
+          ...p.toObject(),
+          totalActualAmount
+        };
+      });
+    }
+
+    res.status(200).json(predictions);
   } catch (error) {
-      console.error('Error fetching cash flow predictions:', error);
-      res.status(500).json({ error: 'Failed to fetch predictions', message: error.message });
+    console.error('Error fetching cash flow predictions:', error);
+    res.status(500).json({ error: 'Failed to fetch predictions', message: error.message });
   }
 });
+
+
 
 app.post('/api/cash-flow/set-actual', async (req, res) => {
   try {
@@ -706,12 +746,18 @@ app.get("/api/reports/summary", async (req, res) => {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
-    console.log(`Query: from=${from}, to=${to}, type=${type}`);
+    console.log(`Query: from=${from}, to=${to}, type=${type || "both"}`);
 
     const query = {
-      date: { $gte: fromDate, $lte: toDate },
+      date: { $gte: fromDate, $lte: new Date(toDate.getTime() + 86400000 - 1) }, // Include full day
     };
-    if (type !== "both") query.type = type;
+    if (type && type !== "both") {
+      query.type = type.toLowerCase(); // Normalize type to handle case sensitivity
+    }
+
+    // Log raw transaction count for debugging
+    const transactionCount = await Transaction.countDocuments(query);
+    console.log(`Transaction count for date range: ${transactionCount}`);
 
     // Daily Expenses
     const dailyExpenses = await Transaction.aggregate([
@@ -724,7 +770,10 @@ app.get("/api/reports/summary", async (req, res) => {
       },
       { $sort: { _id: 1 } },
       { $project: { date: "$_id", amount: 1, _id: 0 } },
-    ]);
+    ]).then(result => {
+      console.log("Daily Expenses:", result);
+      return result;
+    });
 
     // Weekly Aggregation
     const weekly = await Transaction.aggregate([
@@ -736,10 +785,10 @@ app.get("/api/reports/summary", async (req, res) => {
             week: { $week: "$date" },
           },
           expenses: {
-            $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] },
+            $sum: { $cond: [{ $eq: [{ $toLower: "$type" }, "expense"] }, "$amount", 0] },
           },
           income: {
-            $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] },
+            $sum: { $cond: [{ $eq: [{ $toLower: "$type" }, "income"] }, "$amount", 0] },
           },
         },
       },
@@ -759,19 +808,22 @@ app.get("/api/reports/summary", async (req, res) => {
         },
       },
       { $sort: { "_id.year": 1, "_id.week": 1 } },
-    ]);
+    ]).then(result => {
+      console.log("Weekly:", result);
+      return result;
+    });
 
-    // Monthly Aggregation
+    // Monthly Aggregation (similar changes)
     const monthly = await Transaction.aggregate([
       { $match: query },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
           expenses: {
-            $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] },
+            $sum: { $cond: [{ $eq: [{ $toLower: "$type" }, "expense"] }, "$amount", 0] },
           },
           income: {
-            $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] },
+            $sum: { $cond: [{ $eq: [{ $toLower: "$type" }, "income"] }, "$amount", 0] },
           },
         },
       },
@@ -801,19 +853,22 @@ app.get("/api/reports/summary", async (req, res) => {
         },
       },
       { $sort: { _id: 1 } },
-    ]);
+    ]).then(result => {
+      console.log("Monthly:", result);
+      return result;
+    });
 
-    // Yearly Aggregation
+    // Yearly Aggregation (similar changes)
     const yearly = await Transaction.aggregate([
       { $match: query },
       {
         $group: {
           _id: { $year: "$date" },
           expenses: {
-            $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] },
+            $sum: { $cond: [{ $eq: [{ $toLower: "$type" }, "expense"] }, "$amount", 0] },
           },
           income: {
-            $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] },
+            $sum: { $cond: [{ $eq: [{ $toLower: "$type" }, "income"] }, "$amount", 0] },
           },
         },
       },
@@ -826,14 +881,17 @@ app.get("/api/reports/summary", async (req, res) => {
         },
       },
       { $sort: { year: 1 } },
-    ]);
+    ]).then(result => {
+      console.log("Yearly:", result);
+      return result;
+    });
 
     // Category Breakdown
     const categories = await Transaction.aggregate([
-      { $match: query },
+      { $match: { ...query, type: "expense" } },
       {
         $group: {
-          _id: "$category",
+          _id: { $ifNull: ["$category", "Uncategorized"] }, // Handle missing categories
           amount: { $sum: "$amount" },
         },
       },
@@ -844,15 +902,18 @@ app.get("/api/reports/summary", async (req, res) => {
           _id: 0,
         },
       },
-      { $sort: { category: 1 } },
-    ]);
+      { $sort: { amount: -1 } },
+    ]).then(result => {
+      console.log("Categories:", result);
+      return result;
+    });
 
-    // Trends
+    // Trends (unchanged)
     const trends = await CashFlowPrediction.find({
       month: { $gte: from.slice(0, 7), $lte: to.slice(0, 7) },
     }).sort({ month: 1 });
     const trendsArray = trends.map(t => ({
-      month: t.month.slice(5, 7),
+      month: new Date(`${t.month}-01`).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
       net: t.actualCashFlow || t.predictedCashFlow || 0,
     }));
 
@@ -881,33 +942,42 @@ app.get("/api/reports/summary", async (req, res) => {
           _id: 0,
         },
       },
-    ]);
+    ]).then(result => {
+      console.log("Prev Day Expenses:", result);
+      return result[0]?.amount || 0;
+    });
 
     // Total Expenses and Income
     const totals = await Transaction.aggregate([
       { $match: query },
       {
         $group: {
-          _id: "$type",
+          _id: { $toLower: "$type" }, // Normalize type
           amount: { $sum: "$amount" },
         },
       },
-    ]);
+    ]).then(result => {
+      console.log("Totals:", result);
+      return result;
+    });
 
     const totalExpenses = totals.find(t => t._id === "expense")?.amount || 0;
     const totalIncome = totals.find(t => t._id === "income")?.amount || 0;
 
-    res.json({
-      dailyExpenses,
-      weekly,
-      monthly,
-      yearly,
-      categories,
-      trends: trendsArray,
-      prevDayExpenses: prevDayExpenses[0]?.amount || 0,
-      totalExpenses,
-      totalIncome,
-    });
+    const response = {
+      dailyExpenses: dailyExpenses || [],
+      weekly: weekly || [],
+      monthly: monthly || [],
+      yearly: yearly || [],
+      categories: categories || [],
+      trends: trendsArray || [],
+      prevDayExpenses: prevDayExpenses,
+      totalExpenses: totalExpenses,
+      totalIncome: totalIncome,
+    };
+
+    console.log("Response Data:", response);
+    res.json(response);
   } catch (error) {
     console.error("Error in /api/reports/summary:", error.stack);
     res.status(500).json({ message: `Server error: ${error.message}` });
