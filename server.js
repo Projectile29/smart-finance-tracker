@@ -749,29 +749,94 @@ app.get("/api/reports/summary", async (req, res) => {
     console.log(`Query: from=${from}, to=${to}, type=${type || "both"}`);
 
     const query = {
-      date: { $gte: fromDate, $lte: new Date(toDate.getTime() + 86400000 - 1) }, // Include full day
+      date: { $gte: fromDate, $lte: new Date(toDate.getTime() + 86400000 - 1) },
+      type: { $exists: true, $ne: "" },
     };
     if (type && type !== "both") {
-      query.type = type.toLowerCase(); // Normalize type to handle case sensitivity
+      query.type = type.toLowerCase();
     }
 
-    // Log raw transaction count for debugging
     const transactionCount = await Transaction.countDocuments(query);
     console.log(`Transaction count for date range: ${transactionCount}`);
 
-    // Daily Expenses
-    const dailyExpenses = await Transaction.aggregate([
-      { $match: { ...query, type: "expense" } },
+    // Today's Total Expense (April 22, 2025)
+    const today = new Date("2025-04-22");
+    const todaysTotalExpense = await Transaction.aggregate([
+      {
+        $match: {
+          type: "expense",
+          date: {
+            $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+            $lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+          },
+        },
+      },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          _id: null,
           amount: { $sum: "$amount" },
         },
       },
-      { $sort: { _id: 1 } },
-      { $project: { date: "$_id", amount: 1, _id: 0 } },
+      {
+        $project: {
+          amount: 1,
+          _id: 0,
+        },
+      },
     ]).then(result => {
-      console.log("Daily Expenses:", result);
+      console.log("Today's Total Expense Result:", result);
+      return result[0]?.amount || 0;
+    });
+
+    // Total Monthly Expense (April 2025)
+    const totalMonthlyExpense = await Transaction.aggregate([
+      {
+        $match: {
+          type: "expense",
+          date: {
+            $gte: new Date("2025-04-01"),
+            $lte: new Date("2025-04-30"),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          amount: { $sum: "$amount" },
+        },
+      },
+      {
+        $project: {
+          amount: 1,
+          _id: 0,
+        },
+      },
+    ]).then(result => {
+      console.log("Total Monthly Expense Result:", result);
+      return result[0]?.amount || 0;
+    });
+
+    // Daily Expenses (Today's expenses with time)
+    const dailyExpenses = await Transaction.aggregate([
+      {
+        $match: {
+          type: "expense",
+          date: {
+            $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+            $lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%H:%M", date: "$date" } },
+          amount: { $sum: "$amount" },
+        },
+      },
+      { $sort: { "_id": 1 } },
+      { $project: { time: "$_id", amount: 1, _id: 0 } },
+    ]).then(result => {
+      console.log("Daily Expenses Result:", result);
       return result;
     });
 
@@ -795,12 +860,7 @@ app.get("/api/reports/summary", async (req, res) => {
       {
         $project: {
           week: {
-            $concat: [
-              "Week ",
-              { $toString: "$_id.week" },
-              " ",
-              { $toString: "$_id.year" },
-            ],
+            $concat: ["Week ", { $toString: "$_id.week" }, " ", { $toString: "$_id.year" }],
           },
           expenses: 1,
           income: 1,
@@ -808,12 +868,9 @@ app.get("/api/reports/summary", async (req, res) => {
         },
       },
       { $sort: { "_id.year": 1, "_id.week": 1 } },
-    ]).then(result => {
-      console.log("Weekly:", result);
-      return result;
-    });
+    ]).then(result => result);
 
-    // Monthly Aggregation (similar changes)
+    // Monthly Aggregation
     const monthly = await Transaction.aggregate([
       { $match: query },
       {
@@ -832,10 +889,7 @@ app.get("/api/reports/summary", async (req, res) => {
           month: {
             $let: {
               vars: {
-                months: [
-                  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                ],
+                months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
                 monthNum: { $toInt: { $substr: ["$_id", 5, 2] } },
               },
               in: {
@@ -853,12 +907,9 @@ app.get("/api/reports/summary", async (req, res) => {
         },
       },
       { $sort: { _id: 1 } },
-    ]).then(result => {
-      console.log("Monthly:", result);
-      return result;
-    });
+    ]).then(result => result);
 
-    // Yearly Aggregation (similar changes)
+    // Yearly Aggregation
     const yearly = await Transaction.aggregate([
       { $match: query },
       {
@@ -881,17 +932,14 @@ app.get("/api/reports/summary", async (req, res) => {
         },
       },
       { $sort: { year: 1 } },
-    ]).then(result => {
-      console.log("Yearly:", result);
-      return result;
-    });
+    ]).then(result => result);
 
     // Category Breakdown
     const categories = await Transaction.aggregate([
       { $match: { ...query, type: "expense" } },
       {
         $group: {
-          _id: { $ifNull: ["$category", "Uncategorized"] }, // Handle missing categories
+          _id: { $ifNull: ["$category", "Uncategorized"] },
           amount: { $sum: "$amount" },
         },
       },
@@ -903,12 +951,9 @@ app.get("/api/reports/summary", async (req, res) => {
         },
       },
       { $sort: { amount: -1 } },
-    ]).then(result => {
-      console.log("Categories:", result);
-      return result;
-    });
+    ]).then(result => result);
 
-    // Trends (unchanged)
+    // Trends
     const trends = await CashFlowPrediction.find({
       month: { $gte: from.slice(0, 7), $lte: to.slice(0, 7) },
     }).sort({ month: 1 });
@@ -942,27 +987,25 @@ app.get("/api/reports/summary", async (req, res) => {
           _id: 0,
         },
       },
-    ]).then(result => {
-      console.log("Prev Day Expenses:", result);
-      return result[0]?.amount || 0;
-    });
+    ]).then(result => result[0]?.amount || 0);
 
     // Total Expenses and Income
     const totals = await Transaction.aggregate([
       { $match: query },
       {
         $group: {
-          _id: { $toLower: "$type" }, // Normalize type
+          _id: { $toLower: "$type" },
           amount: { $sum: "$amount" },
         },
       },
     ]).then(result => {
-      console.log("Totals:", result);
+      console.log("Raw Totals:", result);
       return result;
     });
 
     const totalExpenses = totals.find(t => t._id === "expense")?.amount || 0;
     const totalIncome = totals.find(t => t._id === "income")?.amount || 0;
+    console.log(`Calculated Total Expenses: ${totalExpenses}, Total Income: ${totalIncome}`);
 
     const response = {
       dailyExpenses: dailyExpenses || [],
@@ -972,6 +1015,8 @@ app.get("/api/reports/summary", async (req, res) => {
       categories: categories || [],
       trends: trendsArray || [],
       prevDayExpenses: prevDayExpenses,
+      todaysTotalExpense: todaysTotalExpense,
+      totalMonthlyExpense: totalMonthlyExpense,
       totalExpenses: totalExpenses,
       totalIncome: totalIncome,
     };
