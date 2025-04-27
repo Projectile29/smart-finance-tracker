@@ -1,3 +1,4 @@
+<!-- In reports.html, replace the filters section -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,32 +26,12 @@
         <a href="./dashboard.html"><i class="fas fa-home fa-2x"></i></a>
         <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
         <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
-        <button class="logout-btn">Logout</button>
       </div>
     </header>
 
     <section class="content">
       <div class="container">
         <h1>Financial Reports</h1>
-
-        <!-- Filters -->
-        <div class="card filters">
-          <div class="filter-group">
-            <label for="from-date">Date Range:</label>
-            <input type="date" id="from-date">
-            <span>to</span>
-            <input type="date" id="to-date">
-          </div>
-          <div class="filter-group">
-            <label for="report-type">Report Type:</label>
-            <select id="report-type">
-              <option value="expenses">Expenses</option>
-              <option value="income">Income</option>
-              <option value="both" selected>Both</option>
-            </select>
-          </div>
-          <button onclick="applyFilters()">Apply Filters</button>
-        </div>
 
         <!-- Summary Cards -->
         <div class="summary-cards">

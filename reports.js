@@ -1,11 +1,15 @@
 document.addEventListener("DOMContentLoaded", function () {
   let charts = {};
 
-  async function fetchReportData(fromDate, toDate, type = "both") {
+  async function fetchReportData() {
     try {
       showLoader();
+      const today = new Date("2025-04-28"); // Ensure correct date
+      const fromDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10); // 2025-04-01
+      const toDate = today.toISOString().slice(0, 10); // 2025-04-28
+      console.log(`Fetching data for range: ${fromDate} to ${toDate}`);
       const response = await fetch(
-        `http://localhost:5000/api/reports/summary?from=${fromDate}&to=${toDate}&type=${type}`,
+        `http://localhost:5000/api/reports/summary?from=${fromDate}&to=${toDate}`,
         { headers: { "Content-Type": "application/json" } }
       );
       if (!response.ok) {
@@ -13,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
         throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      console.log("API Response:", data);
+      console.log("Fetched Data:", data);
       return data;
     } catch (error) {
       console.error("Fetch Error:", error);
@@ -24,7 +28,32 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  function updateSummaries(data) {
+    console.log("Summary Data:", data);
+    const elements = {
+      prevDay: document.getElementById("prev-day-expenses"),
+      todaysTotal: document.getElementById("todays-total-expense"),
+      totalMonthly: document.getElementById("total-monthly-expense"),
+      totalIncome: document.getElementById("total-income"), // Kept for UI consistency, but will show 0
+    };
+    if (!data || Object.values(elements).some(el => !el)) {
+      Object.values(elements).forEach(el => el && (el.textContent = "₹0"));
+      return;
+    }
+    elements.prevDay.textContent = data.prevDayExpenses !== undefined
+      ? `₹${parseFloat(data.prevDayExpenses || 0).toLocaleString('en-IN')}`
+      : "₹0";
+    elements.todaysTotal.textContent = data.todaysTotalExpense !== undefined
+      ? `₹${parseFloat(data.todaysTotalExpense || 0).toLocaleString('en-IN')}`
+      : "₹0";
+    elements.totalMonthly.textContent = data.totalMonthlyExpense !== undefined
+      ? `₹${parseFloat(data.totalMonthlyExpense || 0).toLocaleString('en-IN')}`
+      : "₹0";
+    elements.totalIncome.textContent = "₹0"; // Force to 0 since income is removed
+  }
+
   function initializeCharts(data) {
+    console.log("Chart Data:", data);
     Object.values(charts).forEach(chart => chart?.destroy());
     charts = {};
 
@@ -33,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // Daily Expenses (Bar chart with time)
+    // Daily Expenses
     charts.dailyExpenses = new Chart(document.getElementById("dailyExpensesChart"), {
       type: "bar",
       data: {
@@ -46,93 +75,121 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       options: {
         responsive: true,
-        scales: { y: { beginAtZero: true } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value.toLocaleString('en-IN');
+              }
+            }
+          }
+        },
         plugins: { legend: { display: false } },
       },
     });
+    console.log("Daily Expenses Data:", data.dailyExpenses);
 
-    // Weekly Expenses & Income (Bar chart)
+    // Weekly Expenses
     const weeklyExpenses = data.weekly?.map(w => w.expenses) || [0];
-    const weeklyIncome = data.weekly?.map(w => w.income) || [0];
-    const hasIncome = weeklyIncome.some(v => v > 0);
+    console.log("Weekly Chart - Expenses:", weeklyExpenses);
     charts.weekly = new Chart(document.getElementById("weeklyChart"), {
       type: "bar",
       data: {
         labels: data.weekly?.length ? data.weekly.map(w => w.week) : ["No Data"],
         datasets: [
-          {
-            label: "Expenses (₹)",
-            data: weeklyExpenses,
-            backgroundColor: "#dc3545",
-          },
-          ...(hasIncome ? [{
-            label: "Income (₹)",
-            data: weeklyIncome,
-            backgroundColor: "#28a745",
-          }] : []),
+          { label: "Expenses (₹)", data: weeklyExpenses, backgroundColor: "#dc3545" },
         ],
       },
       options: {
         responsive: true,
-        scales: { y: { beginAtZero: true } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value.toLocaleString('en-IN');
+              }
+            }
+          },
+          x: {
+            ticks: {
+              autoSkip: false,
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        },
       },
     });
 
-    // Monthly Expenses & Income (Bar chart)
+    // Monthly Expenses
     const monthlyExpenses = data.monthly?.map(m => m.expenses) || [0];
-    const monthlyIncome = data.monthly?.map(m => m.income) || [0];
-    const hasMonthlyIncome = monthlyIncome.some(v => v > 0);
+    console.log("Monthly Chart - Expenses:", monthlyExpenses);
     charts.monthly = new Chart(document.getElementById("monthlyChart"), {
       type: "bar",
       data: {
         labels: data.monthly?.length ? data.monthly.map(m => m.month) : ["No Data"],
         datasets: [
-          {
-            label: "Expenses (₹)",
-            data: monthlyExpenses,
-            backgroundColor: "#dc3545",
-          },
-          ...(hasMonthlyIncome ? [{
-            label: "Income (₹)",
-            data: monthlyIncome,
-            backgroundColor: "#28a745",
-          }] : []),
+          { label: "Expenses (₹)", data: monthlyExpenses, backgroundColor: "#dc3545" },
         ],
       },
       options: {
         responsive: true,
-        scales: { y: { beginAtZero: true } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value.toLocaleString('en-IN');
+              }
+            }
+          },
+          x: {
+            ticks: {
+              autoSkip: false,
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        },
       },
     });
 
-    // Yearly Expenses & Income (Bar chart)
+    // Yearly Expenses
     const yearlyExpenses = data.yearly?.map(y => y.expenses) || [0];
-    const yearlyIncome = data.yearly?.map(y => y.income) || [0];
-    const hasYearlyIncome = yearlyIncome.some(v => v > 0);
+    console.log("Yearly Chart - Expenses:", yearlyExpenses);
     charts.yearly = new Chart(document.getElementById("yearlyChart"), {
       type: "bar",
       data: {
         labels: data.yearly?.length ? data.yearly.map(y => y.year) : ["No Data"],
         datasets: [
-          {
-            label: "Expenses (₹)",
-            data: yearlyExpenses,
-            backgroundColor: "#dc3545",
-          },
-          ...(hasYearlyIncome ? [{
-            label: "Income (₹)",
-            data: yearlyIncome,
-            backgroundColor: "#28a745",
-          }] : []),
+          { label: "Expenses (₹)", data: yearlyExpenses, backgroundColor: "#dc3545" },
         ],
       },
       options: {
         responsive: true,
-        scales: { y: { beginAtZero: true } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value.toLocaleString('en-IN');
+              }
+            }
+          },
+          x: {
+            ticks: {
+              autoSkip: false,
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        },
       },
     });
 
-    // Category Breakdown (Bar chart)
+    // Category Breakdown
     charts.category = new Chart(document.getElementById("categoryChart"), {
       type: "bar",
       data: {
@@ -147,82 +204,66 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       options: {
         responsive: true,
-        scales: { y: { beginAtZero: true } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value.toLocaleString('en-IN');
+              }
+            }
+          }
+        },
         plugins: { legend: { position: "right" } },
       },
     });
+    console.log("Category Breakdown Data:", data.categories);
 
-    // Trend Analysis (Line chart)
+    // Trend Analysis (Expenses only)
     charts.trend = new Chart(document.getElementById("trendChart"), {
       type: "line",
       data: {
         labels: data.trends?.length ? data.trends.map(t => t.month) : ["No Data"],
         datasets: [{
-          label: "Net Cash Flow (₹)",
-          data: data.trends?.length ? data.trends.map(t => t.net) : [0],
-          borderColor: "#007bff",
+          label: "Expenses (₹)",
+          data: data.trends?.length ? data.trends.map(t => t.net) : [0], // Use net as positive expenses
+          borderColor: "#dc3545",
           fill: false,
         }],
       },
       options: {
         responsive: true,
-        scales: { y: { beginAtZero: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '₹' + value.toLocaleString('en-IN');
+              }
+            }
+          }
+        },
       },
     });
+    console.log("Trend Analysis Data:", data.trends);
   }
 
-  function updateSummaries(data) {
-    if (!data) return;
-    document.getElementById("prev-day-expenses").textContent =
-      data.prevDayExpenses !== undefined
-        ? `₹${parseFloat(data.prevDayExpenses || 0).toLocaleString('en-IN')}`
-        : "₹0";
-    document.getElementById("todays-total-expense").textContent =
-      data.todaysTotalExpense !== undefined
-        ? `₹${parseFloat(data.todaysTotalExpense || 0).toLocaleString('en-IN')}`
-        : "₹0";
-    document.getElementById("total-monthly-expense").textContent =
-      data.totalMonthlyExpense !== undefined
-        ? `₹${parseFloat(data.totalMonthlyExpense || 0).toLocaleString('en-IN')}`
-        : "₹0";
-    document.getElementById("total-income").textContent =
-      data.totalIncome !== undefined
-        ? `₹${parseFloat(data.totalIncome || 0).toLocaleString('en-IN')}`
-        : "₹0";
-  }
-
-  window.applyFilters = async function () {
-    const fromDate = document.getElementById("from-date").value;
-    const toDate = document.getElementById("to-date").value;
-    const reportType = document.getElementById("report-type").value || "both";
-
-    if (!fromDate || !toDate) {
-      showErrorMessage("Please select both From and To dates.");
-      return;
-    }
-
-    const data = await fetchReportData(fromDate, toDate, reportType);
+  async function loadData() {
+    const data = await fetchReportData();
     if (data) {
       initializeCharts(data);
       updateSummaries(data);
-      showInfoMessage("Filters applied successfully!");
+      showInfoMessage("Data loaded successfully!");
     } else {
       initializeCharts({});
       updateSummaries({});
     }
-  };
+  }
 
- 
-
-  // Download Report
   window.downloadReport = async function (format) {
-    const fromDate = document.getElementById("from-date").value;
-    const toDate = document.getElementById("to-date").value;
-
-    if (!fromDate || !toDate) {
-      showErrorMessage("Please select a date range to download the report.");
-      return;
-    }
+    const today = new Date("2025-04-28");
+    const fromDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+    const toDate = today.toISOString().slice(0, 10);
 
     try {
       showLoader();
@@ -316,14 +357,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(() => div.remove(), 3000);
   }
 
-  // Initialize with default date range (last 30 days)
-
- const today = new Date();
- const thirtyDaysAgo = new Date();
- thirtyDaysAgo.setDate(today.getDate() - 30);
- document.getElementById("from-date").value = thirtyDaysAgo.toISOString().slice(0, 10);
- document.getElementById("to-date").value = today.toISOString().slice(0, 10);
- document.getElementById("report-type").value = "both";
- applyFilters();
- loadNotifications();
+  // Load data on page load
+  loadData();
+  loadNotifications();
 });
