@@ -1,4 +1,11 @@
 document.addEventListener("DOMContentLoaded", async () => {
+    // 🔒 Redirect if not logged in
+    const userEmail = localStorage.getItem("userEmail");
+    if (!userEmail) {
+        window.location.href = "login.html";
+        return;
+    }
+
     const totalExpensesCard = document.getElementById("total-expenses-card");
     const incomeCard = document.getElementById("income-card");
     const remainingBudgetCard = document.getElementById("remaining-budget-card");
@@ -148,7 +155,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
         console.error("Error fetching dashboard data:", error);
     }
-});
+    
 // Notification Functions
 function addNotification(message) {
     const notificationList = document.getElementById('notificationList');
@@ -170,3 +177,15 @@ function clearNotifications() {
     localStorage.removeItem('notifications');
     document.getElementById('notificationList').innerHTML = '';
 }
+
+    const logoutBtn = document.querySelector(".logout-btn");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("userEmail");
+            window.location.href = "login.html";
+        });
+    } else {
+        console.warn("Logout button not found!");
+    }
+});
