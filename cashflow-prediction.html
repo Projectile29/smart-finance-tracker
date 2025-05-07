@@ -50,7 +50,12 @@
                 <div id="predictions-output"></div>
             </div>
             
-
+  <!-- Notification Popup Panel -->
+  <div id="notificationPanel" class="notification-panel">
+    <h3>Notifications</h3>
+    <ul id="notificationList"></ul>
+    <button onclick="clearNotifications()">Clear All</button>
+  </div>
            
 
         <!-- Modal -->
@@ -58,6 +63,7 @@
             <div id="modal-content" class="modal-content"></div>
         </div>
     </div>
+
 
     <script>
         // Generate Predictions (POST Request)
@@ -350,15 +356,27 @@
             setTimeout(() => errorDiv.remove(), 5000);
         }
 
-        // Notification Functions
-        function toggleNotifications() {
-            const panel = document.getElementById('notificationPanel');
-            panel.classList.toggle('show-panel');
-        }
+      // Notification Functions
+function addNotification(message) {
+    const notificationList = document.getElementById('notificationList');
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    notifications.push(message);
+    localStorage.setItem('notifications', JSON.stringify(notifications));
 
-        function clearNotifications() {
-            document.getElementById('notificationList').innerHTML = '';
-        }
+    const li = document.createElement('li');
+    li.textContent = message;
+    notificationList.appendChild(li);
+}
+
+function toggleNotifications() {
+    const panel = document.getElementById('notificationPanel');
+    panel.classList.toggle('show-panel');
+}
+
+function clearNotifications() {
+    localStorage.removeItem('notifications');
+    document.getElementById('notificationList').innerHTML = '';
+}
 
         // Initialize with empty predictions
         document.addEventListener('DOMContentLoaded', () => {

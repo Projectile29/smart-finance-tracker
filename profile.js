@@ -117,3 +117,24 @@ async function saveProfile() {
         alert("Error updating profile. Please try again.");
     }
 }
+// Notification Functions
+function addNotification(message) {
+    const notificationList = document.getElementById('notificationList');
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    notifications.push(message);
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+
+    const li = document.createElement('li');
+    li.textContent = message;
+    notificationList.appendChild(li);
+}
+
+function toggleNotifications() {
+    const panel = document.getElementById('notificationPanel');
+    panel.classList.toggle('show-panel');
+}
+
+function clearNotifications() {
+    localStorage.removeItem('notifications');
+    document.getElementById('notificationList').innerHTML = '';
+}

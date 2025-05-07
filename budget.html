@@ -78,17 +78,18 @@
       </div>
     </div>
 
-    <!-- Edit Spent Popup -->
+    <!-- Edit Budget Popup -->
     <div id="editPopup" class="popup">
       <div class="popup-content">
         <span class="close" onclick="closeEditPopup()">×</span>
-        <h3>Edit Spent Amount</h3>
+        <h3>Edit Budget</h3>
+        <label>Budget Amount (₹):</label>
+        <input type="number" id="editBudgetAmount">
         <label>Spent Amount (₹):</label>
         <input type="number" id="editSpentAmount">
-        <button onclick="updateSpent()">Update</button>
+        <button onclick="updateBudget()">Update</button>
       </div>
     </div>
   </div>
-
 </body>
 </html>

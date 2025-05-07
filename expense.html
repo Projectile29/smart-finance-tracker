@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expenses</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Expenses - Smart Finance Tracker</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="expense.css">
 </head>
@@ -21,35 +23,53 @@
     <header>
       <h2>Smart Finance Tracker</h2>
       <div class="header-actions">
-        <a href="./dashboard.html"><i class="fas fa-home fa-2x"></i></a>
-        <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
-        <button class="logout-btn">Logout</button>
+        <a href="./dashboard.html" aria-label="Go to Dashboard"><i class="fas fa-home fa-2x"></i></a>
+        <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
+        <a href="./profile.html" aria-label="Go to Profile"><i class="fas fa-user-circle fa-2x"></i></a>
+        <button class="logout-btn" aria-label="Logout">Logout</button>
       </div>
     </header>
 
     <section class="expense-tracking">
       <h2>Expense Tracking</h2>
-      <button class="add-expense" onclick="openExpenseForm()">+ Expense</button>
+      <button class="add-expense" onclick="openExpenseForm()" aria-label="Add New Expense">+ Add Expense</button>
 
-      <!-- Expense Form (Hidden Initially) -->
       <div id="expense-form" class="expense-form">
-        <h3>Add Expense</h3>
-        <label for="category">Category:</label>
-        <input type="text" id="category" placeholder="Enter category">
-
-        <label for="amount">Amount:</label>
-        <input type="number" id="amount" placeholder="Enter amount">
-
-        <label for="date">Date:</label>
-        <input type="date" id="date">
-
+        <h3>Add New Expense</h3>
+        <div class="form-group">
+          <label for="category-select">Category <span class="required">*</span></label>
+          <select id="category-select" onchange="toggleNewCategoryInput()" aria-required="true">
+            <option value="">Select a category</option>
+            <!-- Categories will be populated dynamically -->
+            <option value="new">Add New Category</option>
+          </select>
+          <div id="category-error" class="error-message"></div>
+        </div>
+        <div id="new-category-input" class="form-group" style="display: none;">
+          <label for="new-category">New Category Name <span class="required">*</span></label>
+          <input type="text" id="new-category" placeholder="e.g., Travel" aria-required="true">
+          <div id="new-category-error" class="error-message"></div>
+        </div>
+        <div class="form-group">
+          <label for="amount">Amount (₹) <span class="required">*</span></label>
+          <input type="number" id="amount" placeholder="e.g., 500.00" min="0" step="0.01" aria-required="true">
+          <div id="amount-error" class="error-message"></div>
+        </div>
+        <div class="form-group">
+          <label for="date">Date <span class="required">*</span></label>
+          <input type="date" id="date" aria-required="true">
+          <div id="date-error" class="error-message"></div>
+        </div>
+        <div class="form-group">
+          <label for="time">Time (Optional)</label>
+          <input type="time" id="time">
+        </div>
         <div class="form-buttons">
-          <button onclick="addExpense()">Add</button>
-          <button onclick="closeExpenseForm()">Cancel</button>
+          <button onclick="addExpense()" aria-label="Save Expense">Save</button>
+          <button onclick="closeExpenseForm()" aria-label="Cancel">Cancel</button>
         </div>
       </div>
 
-      <!-- Daily Expenses Table -->
       <div class="card expenses-table">
         <h3>Daily Expenses</h3>
         <table>
@@ -57,6 +77,7 @@
             <tr>
               <th>Transaction ID</th>
               <th>Date</th>
+              <th>Time</th>
               <th>Category</th>
               <th>Amount</th>
             </tr>
@@ -65,10 +86,9 @@
             <!-- Data will be inserted dynamically -->
           </tbody>
         </table>
-        <button id="view-all-btn">View All</button>
+        <button id="view-all-btn" aria-label="View All Transactions">View All</button>
       </div>
 
-      <!-- Total Expenses -->
       <div class="card total-expenses">
         <h3>Total Expenses</h3>
         <table>
@@ -79,18 +99,19 @@
               <th>Amount</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td>Personal</td>
-              <td>Grocery</td>
-              <td>250</td>
-            </tr>
+          <tbody id="total-expenses-body">
+            <!-- Data will be inserted dynamically -->
           </tbody>
         </table>
       </div>
     </section>
   </div>
-
+ <!-- Notification Popup Panel -->
+ <div id="notificationPanel" class="notification-panel">
+  <h3>Notifications</h3>
+  <ul id="notificationList"></ul>
+  <button onclick="clearNotifications()">Clear All</button>
+</div>
   <script defer src="expense.js"></script>
 </body>
 </html>

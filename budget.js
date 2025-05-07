@@ -2,6 +2,7 @@ let transactions = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
     await fetchTransactions();
+    await createCategoriesFromTransactions();
     await updateTable();
 });
 
@@ -38,11 +39,13 @@ function openEditPopup(budgetId) {
     })
     .then(budget => {
         console.log("Fetched budget:", budget);
+        const editBudgetInput = document.getElementById('editBudgetAmount');
         const editSpentInput = document.getElementById('editSpentAmount');
-        if (!editSpentInput) {
-            console.error("editSpentAmount input not found");
+        if (!editBudgetInput || !editSpentInput) {
+            console.error("Edit inputs not found");
             return;
         }
+        editBudgetInput.value = budget.budget || 0;
         editSpentInput.value = budget.spent || 0;
         editPopup.dataset.budgetId = budgetId;
         editPopup.style.display = 'block';
@@ -88,24 +91,25 @@ function addCategory() {
     });
 }
 
-// Update Spent Amount (PUT to /budgets/:id)
-function updateSpent() {
+// Update Budget and Spent Amount (PUT to /budgets/:id)
+function updateBudget() {
     const editPopup = document.getElementById('editPopup');
+    const budget = parseFloat(document.getElementById('editBudgetAmount').value);
     const spent = parseFloat(document.getElementById('editSpentAmount').value);
     const budgetId = editPopup.dataset.budgetId;
 
-    if (isNaN(spent) || spent < 0) {
-        alert('Invalid amount');
+    if (isNaN(budget) || budget < 0 || isNaN(spent) || spent < 0) {
+        alert('Invalid budget or spent amount');
         return;
     }
 
     fetch(`http://localhost:5000/budgets/${budgetId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spent })
+        body: JSON.stringify({ budget, spent })
     })
     .then(response => {
-        if (!response.ok) throw new Error('Failed to update spent amount');
+        if (!response.ok) throw new Error('Failed to update budget');
         return response.json();
     })
     .then(() => {
@@ -113,8 +117,8 @@ function updateSpent() {
         closeEditPopup();
     })
     .catch(error => {
-        console.error("Error updating spent:", error);
-        alert('Failed to update spent amount');
+        console.error("Error updating budget:", error);
+        alert('Failed to update budget');
     });
 }
 
@@ -124,15 +128,56 @@ async function fetchTransactions() {
         const response = await fetch('http://localhost:5000/transactions');
         if (!response.ok) throw new Error('Network response was not ok');
         transactions = await response.json();
+        console.log("Budget page fetched transactions:", transactions.map(tx => ({ date: tx.date, category: tx.category })));
     } catch (error) {
         console.error("Error fetching transactions:", error);
+    }
+}
+
+// Create Budget Categories from Transactions
+async function createCategoriesFromTransactions() {
+    try {
+        // Get unique categories from transactions
+        const transactionCategories = [...new Set(transactions.map(tx => tx.category))];
+
+        // Fetch existing budgets for the current month
+        const currentMonth = new Date().toISOString().slice(0, 7); // Format: "YYYY-MM"
+        const budgetsResponse = await fetch('http://localhost:5000/budgets');
+        if (!budgetsResponse.ok) throw new Error('Failed to fetch budgets');
+        const budgets = await budgetsResponse.json();
+        const existingCategories = budgets.map(budget => budget.name);
+
+        // Create budgets for categories that don't exist
+        const categoriesToCreate = transactionCategories.filter(category => !existingCategories.includes(category));
+
+        for (const category of categoriesToCreate) {
+            await fetch('http://localhost:5000/budgets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: category, budget: 0, spent: 0, month: currentMonth })
+            });
+        }
+
+        // Sync budgets after creating new categories
+        await syncBudgetsWithTransactions();
+    } catch (error) {
+        console.error("Error creating categories from transactions:", error);
     }
 }
 
 // Sync Budgets with Transactions
 async function syncBudgetsWithTransactions() {
     try {
-        const spentByCategory = transactions.reduce((acc, tx) => {
+        const currentMonth = new Date().toISOString().slice(0, 7); // Format: "YYYY-MM"
+        const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999);
+
+        const currentMonthTransactions = transactions.filter(tx => {
+            const txDate = new Date(tx.date);
+            return txDate >= monthStart && txDate <= monthEnd;
+        });
+
+        const spentByCategory = currentMonthTransactions.reduce((acc, tx) => {
             acc[tx.category] = (acc[tx.category] || 0) + parseFloat(tx.amount);
             return acc;
         }, {});
@@ -147,7 +192,7 @@ async function syncBudgetsWithTransactions() {
                 await fetch(`http://localhost:5000/budgets/${budget._id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ spent: newSpent })
+                    body: JSON.stringify({ budget: budget.budget, spent: newSpent })
                 });
             }
         }
@@ -183,7 +228,7 @@ function deleteCategory(budgetId) {
     }
 }
 
-// Update Table with Budget Data
+// Update Table with Budget Data, Sorted by Latest Transaction
 async function updateTable() {
     const table = document.getElementById('categoryTable');
     table.innerHTML = '';
@@ -193,7 +238,25 @@ async function updateTable() {
     try {
         const response = await fetch('http://localhost:5000/budgets');
         if (!response.ok) throw new Error('Failed to fetch budgets');
-        const budgets = await response.json();
+        let budgets = await response.json();
+
+        // Map each category to its latest transaction date
+        const latestTransactionDates = {};
+        transactions.forEach(tx => {
+            const txDate = new Date(tx.date).getTime();
+            if (!latestTransactionDates[tx.category] || txDate > latestTransactionDates[tx.category]) {
+                latestTransactionDates[tx.category] = txDate;
+            }
+        });
+        console.log("Latest transaction dates by category:", latestTransactionDates);
+
+        // Sort budgets by latest transaction date (descending)
+        budgets.sort((a, b) => {
+            const dateA = latestTransactionDates[a.name] || 0;
+            const dateB = latestTransactionDates[b.name] || 0;
+            return dateB - dateA; // Sort descending (latest first)
+        });
+        console.log("Sorted budgets:", budgets.map(b => ({ name: b.name, latestTransactionDate: latestTransactionDates[b.name] ? new Date(latestTransactionDates[b.name]).toISOString() : 'None' })));
 
         budgets.forEach(budget => {
             const remaining = budget.budget - budget.spent;
@@ -204,7 +267,6 @@ async function updateTable() {
                 addNotification(`Warning: ${budget.name} has exceeded its budget by ₹${(budget.spent - budget.budget).toFixed(2)}!`);
             }
 
-            // Apply 'overspent' class if spent exceeds budget
             const overspentClass = budget.spent > budget.budget ? 'overspent' : '';
             const row = `
                 <tr data-budget-id="${budget._id}" class="${overspentClass}">
@@ -253,7 +315,9 @@ function clearNotifications() {
 
 // Trigger Sync on Transaction Add
 window.addEventListener('transactionAdded', async () => {
+    console.log("Received transactionAdded event on Budget page");
     await fetchTransactions();
+    await createCategoriesFromTransactions();
     await syncBudgetsWithTransactions();
 });
 

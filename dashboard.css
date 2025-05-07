@@ -123,3 +123,62 @@ canvas {
   width: 100%;
   max-height: 300px;
 }
+.notification-panel {
+  display: none;
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  width: 280px;
+  background: var(--card-bg);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  border-radius: 16px;
+  padding: 15px;
+  z-index: 1000;
+}
+
+.notification-panel h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  color: var(--text);
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+}
+
+.notification-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.notification-panel ul li {
+  padding: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.notification-panel ul li:last-child {
+  border-bottom: none;
+}
+
+.notification-panel button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.notification-panel button:hover {
+  background: #3c3bb7;
+}
+
+.show-panel {
+  display: block;
+}

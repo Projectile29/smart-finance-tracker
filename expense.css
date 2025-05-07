@@ -1,234 +1,357 @@
 :root {
-    --primary: #4f46e5;
-    --background: #f9fafb;
-    --card-bg: #ffffff;
-    --text: #111827;
-    --sidebar-bg: #1e293b;
-    --sidebar-text: #ffffff;
-  }
-  
-  body.dark {
-    --primary: #818cf8;
-    --background: #0f172a;
-    --card-bg: #1e293b;
-    --text: #f8fafc;
-    --sidebar-bg: #0f172a;
-    --sidebar-text: #cbd5e1;
-  }
-  
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  
-  body {
-    font-family: 'Roboto', sans-serif;
-    background-color: var(--background);
-    color: var(--text);
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-  }
-  
-  .sidebar {
-    background-color: var(--sidebar-bg);
-    color: var(--sidebar-text);
-    width: 220px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 30px 20px;
-  }
-  
-  .sidebar a {
-    color: inherit;
-    text-decoration: none;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 10px;
-    transition: background 0.2s;
-  }
-  
-  .sidebar a:hover {
-    background: rgba(255,255,255,0.1);
-  }
-  
-  .main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  header {
-    padding: 20px 30px;
-    background: var(--card-bg);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-  
-  .header-actions a {
-    color: var(--text);
-    text-decoration: none;
-  }
-  
-  .logout-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    background: #ef4444;
-    color: white;
-  }
-  
-  .expense-tracking {
-    padding: 30px;
-    flex: 1;
-    overflow-y: auto;
-  }
-  
-  .expense-tracking h2 {
-    margin-bottom: 20px;
-  }
-  
-  .card {
-    background: var(--card-bg);
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
-  }
-  
-  .expenses-table, .total-expenses {
-    width: 100%;
-  }
-  
-  .expenses-table h3, .total-expenses h3 {
-    margin-bottom: 10px;
-  }
-  
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  th, td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  th {
-    background: var(--primary);
-    color: white;
-  }
-  
-  tr:nth-child(even) {
-    background: #f9f9f9;
-  }
-  
-  tr:hover {
-    background: #e8f0ff;
-  }
-  
-  .add-expense {
-    background: var(--primary);
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    margin-bottom: 20px;
-    transition: background 0.2s;
-  }
-  
-  .add-expense:hover {
-    background: #3c3bb7;
-  }
-  
-  #view-all-btn {
-    background: var(--primary);
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    margin-top: 10px;
-    transition: background 0.2s;
-  }
-  
-  #view-all-btn:hover {
-    background: #3c3bb7;
-  }
-  
+  --primary: #4f46e5;
+  --background: #f9fafb;
+  --card-bg: #ffffff;
+  --text: #111827;
+  --sidebar-bg: #1e293b;
+  --sidebar-text: #ffffff;
+  --error: #dc2626;
+}
+
+body.dark {
+  --primary: #818cf8;
+  --background: #0f172a;
+  --card-bg: #1e293b;
+  --text: #f8fafc;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #cbd5e1;
+  --error: #f87171;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 30px 20px;
+}
+
+.sidebar a {
+  color: inherit;
+  text-decoration: none;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.sidebar a:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  padding: 20px 30px;
+  background: var(--card-bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.header-actions a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  background: #ef4444;
+  color: white;
+}
+
+.expense-tracking {
+  padding: 30px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.expense-tracking h2 {
+  margin-bottom: 20px;
+}
+
+.card {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+
+.expenses-table, .total-expenses {
+  width: 100%;
+}
+
+.expenses-table h3, .total-expenses h3 {
+  margin-bottom: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background: var(--primary);
+  color: white;
+}
+
+tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+tr:hover {
+  background: #e8f0ff;
+}
+
+.add-expense {
+  background: var(--primary);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 20px;
+  transition: background 0.2s;
+}
+
+.add-expense:hover {
+  background: #3c3bb7;
+}
+
+#view-all-btn {
+  background: var(--primary);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+#view-all-btn:hover {
+  background: #3c3bb7;
+}
+
+.expense-form {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--card-bg);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  z-index: 1000;
+  width: 100%;
+  max-width: 400px;
+}
+
+.expense-form h3 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.expense-form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.expense-form .required {
+  color: var(--error);
+}
+
+.expense-form input,
+.expense-form select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--text);
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.expense-form input:focus,
+.expense-form select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.error-message {
+  color: var(--error);
+  font-size: 0.875rem;
+  margin-top: 4px;
+  min-height: 20px;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.form-buttons button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.form-buttons button:first-child {
+  background: var(--primary);
+  color: white;
+}
+
+.form-buttons button:first-child:hover {
+  background: #3c3bb7;
+}
+
+.form-buttons button:last-child {
+  background: #ef4444;
+  color: white;
+}
+
+.form-buttons button:last-child:hover {
+  background: #dc2626;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
   .expense-form {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: var(--card-bg);
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    z-index: 1000;
+    width: 90%;
+    padding: 16px;
   }
-  
+
   .expense-form h3 {
-    margin-bottom: 15px;
+    font-size: 1.25rem;
   }
-  
-  .expense-form label {
-    display: block;
-    margin: 10px 0 5px;
-    font-weight: 500;
-  }
-  
-  .expense-form input {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background: var(--background);
-    color: var(--text);
-  }
-  
+
   .form-buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
+    flex-direction: column;
+    gap: 8px;
   }
-  
+
   .form-buttons button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
+    padding: 10px;
   }
-  
-  .form-buttons button:first-child {
-    background: var(--primary);
-    color: white;
-  }
-  
-  .form-buttons button:last-child {
-    background: #ef4444;
-    color: white;
-  }
+}
+.notification-panel {
+  display: none;
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  width: 280px;
+  background: var(--card-bg);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  border-radius: 16px;
+  padding: 15px;
+  z-index: 1000;
+}
+
+.notification-panel h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  color: var(--text);
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+}
+
+.notification-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.notification-panel ul li {
+  padding: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.notification-panel ul li:last-child {
+  border-bottom: none;
+}
+
+.notification-panel button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.notification-panel button:hover {
+  background: #3c3bb7;
+}
+
+.show-panel {
+  display: block;
+}

@@ -1,3 +1,4 @@
+// === Imports ===
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -14,31 +15,33 @@ const { spawn } = require("child_process");
 const { PythonShell } = require("python-shell");
 const path = require("path");
 
-
 require('dotenv').config();
 
+// === App Setup ===
 const app = express();
 const port = process.env.PORT || 5000;
 
+// === Middleware ===
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting (adjusted for development)
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Increased to 1000 requests for development
-  message: { error: "Too many requests from this IP, please try again later." }, // JSON response
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  message: { error: "Too many requests from this IP, please try again later." },
 });
 app.use(limiter);
 
 app.use('/uploads', express.static('uploads'));
 
+// === Database Connection ===
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB connection error:", err));
 
-// User Schema
+// === User Schema and Model ===
 const userSchema = new mongoose.Schema({
   firstName: String,
   lastName: String,
@@ -59,6 +62,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // Multer setup for profile picture uploads
+// === File Upload Configuration ===
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
@@ -66,6 +70,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // User Registration
+// === Authentication Routes ===
 app.post('/signup', async (req, res) => {
   try {
     const { firstName, lastName, email, phone, dob, gender, country, state, password } = req.body;
@@ -291,8 +296,10 @@ app.get('/api/savings-trend', async (req, res) => {
 app.get("/transactions", async (req, res) => {
   try {
     const transactions = await Transaction.find().lean();
+    console.log("Fetched Transactions:", transactions.length);
     res.json(transactions);
   } catch (err) {
+    console.error("Error fetching transactions:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -306,19 +313,37 @@ app.post("/transactions", async (req, res) => {
       return res.status(400).json({ error: "Invalid amount. Must be a number." });
     }
 
+    // Validate date
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate)) {
+      return res.status(400).json({ error: "Invalid date format." });
+    }
+
+    // Ensure unique transactionId
     const lastTransaction = await Transaction.findOne().sort({ transactionId: -1 });
     const transactionId = lastTransaction ? lastTransaction.transactionId + 1 : 1;
+
+    // Check for duplicate transaction (same amount, category, date)
+    const existingTransaction = await Transaction.findOne({
+      amount: amountValue,
+      category,
+      date: parsedDate
+    });
+    if (existingTransaction) {
+      return res.status(400).json({ error: "Duplicate transaction detected." });
+    }
 
     const newTransaction = new Transaction({
       _id: new mongoose.Types.ObjectId(),
       transactionId,
       category,
       amount: amountValue,
-      date: new Date(date),
+      date: parsedDate,
       description
     });
 
     await newTransaction.save();
+    console.log("Added Transaction:", { transactionId, category, amount: amountValue, date });
     res.status(201).json({ message: "Transaction added successfully", transactionId });
   } catch (error) {
     console.error("Error adding transaction:", error);
@@ -326,7 +351,82 @@ app.post("/transactions", async (req, res) => {
   }
 });
 
-// Goal Schema (moved to separate file ideally, but fixed here)
+// === Budget Schema and Model ===
+const budgetSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  budget: { type: Number, required: true },
+  spent: { type: Number, default: 0 },
+  month: { type: String, required: true } // Format: "YYYY-MM"
+});
+
+const Budget = mongoose.model('Budget', budgetSchema);
+
+// === Budget Routes ===
+app.get('/budgets/:id', async (req, res) => {
+  try {
+    const budget = await Budget.findById(req.params.id).lean();
+    if (!budget) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+    res.json(budget);
+  } catch (err) {
+    console.error("Error fetching budget:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get('/budgets', async (req, res) => {
+  try {
+    const currentMonth = new Date().toISOString().slice(0, 7); // Format: "YYYY-MM"
+    const budgets = await Budget.find({ month: currentMonth }).lean();
+    res.json(budgets);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/budgets', async (req, res) => {
+  try {
+    const { name, budget, spent = 0, month = new Date().toISOString().slice(0, 7) } = req.body;
+    const newBudget = new Budget({ name, budget, spent, month });
+    await newBudget.save();
+    res.status(201).json(newBudget);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/budgets/:id', async (req, res) => {
+  try {
+    const { budget, spent } = req.body;
+    const updateFields = {};
+    if (budget !== undefined) updateFields.budget = budget;
+    if (spent !== undefined) updateFields.spent = spent;
+
+    const updatedBudget = await Budget.findByIdAndUpdate(
+      req.params.id,
+      updateFields,
+      { new: true }
+    );
+    if (!updatedBudget) return res.status(404).json({ error: "Budget not found" });
+    res.json(updatedBudget);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/budgets/:id', async (req, res) => {
+  try {
+    const deletedBudget = await Budget.findByIdAndDelete(req.params.id);
+    if (!deletedBudget) return res.status(404).json({ error: "Budget not found" });
+    res.json({ message: "Budget deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting budget:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// === Goal Schema and Model ===
 const goalSchema = new mongoose.Schema({
   name: { type: String, required: true },
   targetAmount: { type: Number, required: true },
@@ -335,7 +435,7 @@ const goalSchema = new mongoose.Schema({
 
 const Goal = mongoose.model('Goal', goalSchema);
 
-// Goal Endpoints
+// === Goal Routes ===
 app.get('/goals', async (req, res) => {
   try {
     const goals = await Goal.find().lean();
@@ -405,81 +505,6 @@ app.get("/goals/:id/projection", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: "Error fetching projection" });
-  }
-});
-
-// Profile Save Endpoint (unused by budget/expense, but kept)
-app.post("/api/saveProfile", (req, res) => {
-  console.log("Received data:", req.body);
-  res.json({ message: "Profile saved successfully!" });
-});
-// Budget Schema
-const budgetSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  budget: { type: Number, required: true },
-  spent: { type: Number, default: 0 }
-});
-
-const Budget = mongoose.model('Budget', budgetSchema);
-
-// In server.js, after const Budget = mongoose.model('Budget', budgetSchema);
-app.get('/budgets/:id', async (req, res) => {
-  try {
-    const budget = await Budget.findById(req.params.id).lean();
-    if (!budget) {
-      return res.status(404).json({ error: "Budget not found" });
-    }
-    res.json(budget);
-  } catch (err) {
-    console.error("Error fetching budget:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-// Budget Endpoints
-app.get('/budgets', async (req, res) => {
-  try {
-    const budgets = await Budget.find().lean();
-    res.json(budgets);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/budgets', async (req, res) => {
-  try {
-    const { name, budget } = req.body;
-    const newBudget = new Budget({ name, budget });
-    await newBudget.save();
-    res.status(201).json(newBudget);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/budgets/:id', async (req, res) => {
-  try {
-    const { spent } = req.body;
-    const updatedBudget = await Budget.findByIdAndUpdate(
-      req.params.id,
-      { $inc: { spent: spent } },
-      { new: true }
-    );
-    if (!updatedBudget) return res.status(404).json({ error: "Budget not found" });
-    res.json(updatedBudget);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-// In server.js, after the Budget model definition
-app.delete('/budgets/:id', async (req, res) => {
-  try {
-    const deletedBudget = await Budget.findByIdAndDelete(req.params.id);
-    if (!deletedBudget) return res.status(404).json({ error: "Budget not found" });
-    res.json({ message: "Budget deleted successfully" });
-  } catch (err) {
-    console.error("Error deleting budget:", err);
-    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -608,33 +633,35 @@ changeStream.on("change", async (change) => {
 
 
 //temp
+// === Cash Flow Prediction Routes ===
 console.log('Attempting to import CashFlowPrediction and CashFlowPredictor');
 const { CashFlowPrediction, CashFlowPredictor } = require('./cashflow-prediction');
 console.log('Imported:', { CashFlowPrediction, CashFlowPredictor });
 
 app.post('/api/cash-flow/generate-predictions', async (req, res) => {
   try {
-      console.log('Handling /api/cash-flow/generate-predictions');
-      const transactions = await Transaction.find({}).sort({ transactionId: 1 });
-      if (!transactions.length) {
-          return res.status(400).json({ error: 'No transactions available for prediction' });
-      }
-      console.log('Creating CashFlowPredictor instance');
-      const predictor = new CashFlowPredictor(transactions);
-      console.log('Generating predictions');
-      const result = await predictor.generatePredictions();
-      res.status(200).json({ 
-          message: 'Cash flow predictions generated successfully',
-          predictions: result.predictions
-      });
+    console.log('Handling /api/cash-flow/generate-predictions');
+    const transactions = await Transaction.find({}).sort({ transactionId: 1 });
+    if (!transactions.length) {
+      return res.status(400).json({ error: 'No transactions available for prediction' });
+    }
+    console.log('Creating CashFlowPredictor instance');
+    const predictor = new CashFlowPredictor(transactions);
+    console.log('Generating predictions');
+    const result = await predictor.generatePredictions();
+    res.status(200).json({ 
+      message: 'Cash flow predictions generated successfully',
+      predictions: result.predictions
+    });
   } catch (error) {
-      console.error('Error generating cash flow predictions:', error);
-      res.status(500).json({ 
-          error: 'Failed to generate predictions',
-          message: error.message
-      });
+    console.error('Error generating cash flow predictions:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate predictions',
+      message: error.message
+    });
   }
 });
+
 app.get('/api/cash-flow/predictions', async (req, res) => {
   try {
     const { direction } = req.query;
@@ -663,20 +690,12 @@ app.get('/api/cash-flow/predictions', async (req, res) => {
       allTransactions.forEach(tx => {
         const txMonth = new Date(tx.date).toISOString().slice(0, 7);
         if (!actualMap[txMonth]) actualMap[txMonth] = { income: 0, expenses: 0 };
-
-        if (tx.amount > 0) {
-          actualMap[txMonth].income += tx.amount;
-        } else {
-          actualMap[txMonth].expenses += Math.abs(tx.amount);
-        }
+        actualMap[txMonth].expenses += Math.abs(tx.amount);
       });
 
       predictions = predictions.map(p => {
         const actual = actualMap[p.month];
-        const totalActualAmount = actual
-          ? Math.round(actual.income - actual.expenses)
-          : null;
-
+        const totalActualAmount = actual ? Math.round(-actual.expenses) : null;
         return {
           ...p.toObject(),
           totalActualAmount
@@ -691,80 +710,131 @@ app.get('/api/cash-flow/predictions', async (req, res) => {
   }
 });
 
-
-
 app.post('/api/cash-flow/set-actual', async (req, res) => {
   try {
-      const { month, actualCashFlow } = req.body;
-      if (!month || actualCashFlow == null) {
-          return res.status(400).json({ error: 'Month and actualCashFlow are required' });
-      }
-      const result = await CashFlowPrediction.findOneAndUpdate(
-          { month },
-          { actualCashFlow },
-          { new: true }
-      );
-      if (!result) {
-          return res.status(404).json({ error: 'Prediction not found' });
-      }
-      res.status(200).json({ message: 'Actual cash flow updated', prediction: result });
+    const { month, actualCashFlow } = req.body;
+    if (!month || actualCashFlow == null) {
+      return res.status(400).json({ error: 'Month and actualCashFlow are required' });
+    }
+    const result = await CashFlowPrediction.findOneAndUpdate(
+      { month },
+      { actualCashFlow },
+      { new: true }
+    );
+    if (!result) {
+      return res.status(404).json({ error: 'Prediction not found' });
+    }
+    res.status(200).json({ message: 'Actual cash flow updated', prediction: result });
   } catch (error) {
-      console.error('Error setting actual cash flow:', error);
-      res.status(500).json({ error: 'Failed to set actual cash flow', message: error.message });
+    console.error('Error setting actual cash flow:', error);
+    res.status(500).json({ error: 'Failed to set actual cash flow', message: error.message });
   }
 });
 
 app.get('/api/cash-flow/analysis', async (req, res) => {
   try {
-      const { month } = req.query;
-      if (!month) {
-          return res.status(400).json({ error: 'Month is required' });
-      }
-      const transactions = await Transaction.find({}).sort({ transactionId: 1 });
-      const predictor = new CashFlowPredictor(transactions);
-      const analysis = await predictor.getAnalysis(month);
-      res.status(200).json(analysis);
+    const { month } = req.query;
+    if (!month) {
+      return res.status(400).json({ error: 'Month is required' });
+    }
+    const transactions = await Transaction.find({}).sort({ transactionId: 1 });
+    const predictor = new CashFlowPredictor(transactions);
+    const analysis = await predictor.getAnalysis(month);
+    res.status(200).json(analysis);
   } catch (error) {
-      console.error('Error fetching analysis:', error);
-      res.status(500).json({ error: 'Failed to fetch analysis', message: error.message });
+    console.error('Error fetching analysis:', error);
+    res.status(500).json({ error: 'Failed to fetch analysis', message: error.message });
   }
 });
 
+// === Report Routes ===
+app.get('/api/savings-trend', async (req, res) => {
+  try {
+    const transactions = await Transaction.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
+          totalExpense: { $sum: "$amount" },
+        },
+      },
+      {
+        $project: {
+          month: "$_id",
+          totalExpense: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { month: 1 } },
+    ]);
+    res.json(transactions);
+  } catch (error) {
+    console.error("Error fetching savings trend:", error);
+    res.status(500).json({ error: 'Error fetching savings trend' });
+  }
+});
 
-// Summary Report
+app.get('/api/reports/available-months', async (req, res) => {
+  try {
+    const months = await Transaction.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
+        },
+      },
+      {
+        $project: {
+          month: "$_id",
+          _id: 0,
+        },
+      },
+      { $sort: { month: -1 } },
+    ]);
+    res.json(months.map(m => m.month));
+  } catch (error) {
+    console.error("Error fetching available months:", error);
+    res.status(500).json({ message: `Server error: ${error.message}` });
+  }
+});
+
 app.get("/api/reports/summary", async (req, res) => {
   try {
-    const { from, to } = req.query; // Removed type since all are expenses
+    const { from, to } = req.query;
     if (!from || !to) {
       return res.status(400).json({ message: "From and to dates are required" });
     }
 
     const fromDate = new Date(from);
     const toDate = new Date(to);
+    toDate.setUTCHours(23, 59, 59, 999);
     if (isNaN(fromDate) || isNaN(toDate)) {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
-    console.log(`Query: from=${from}, to=${to}`);
+    console.log(`Query: from=${fromDate.toISOString()}, to=${toDate.toISOString()}`);
 
-    // Adjust toDate to include the entire day
-    const adjustedToDate = new Date(toDate.getTime() + 86400000 - 1); // End of the day
     const query = {
-      date: { $gte: fromDate, $lte: adjustedToDate },
+      date: { $gte: fromDate, $lte: toDate },
+      amount: { $ne: null } // Exclude invalid amounts
     };
 
-    // Debug raw transactions
     const rawTransactions = await Transaction.find(query, { transactionId: 1, date: 1, category: 1, amount: 1 }).lean();
-    console.log("Raw Transactions:", rawTransactions);
+    console.log("Raw Transactions:", rawTransactions.length);
 
-    // Today's Total Expense (April 28, 2025)
     const today = new Date(toDate);
+    today.setUTCHours(0, 0, 0, 0);
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+    console.log("Today's Date Range:", {
+      todayStart: todayStart.toISOString(),
+      todayEnd: todayEnd.toISOString()
+    });
+
     const todaysTotalExpense = await Transaction.aggregate([
       {
         $match: {
           date: { $gte: todayStart, $lt: todayEnd },
+          amount: { $ne: null }
         },
       },
       {
@@ -782,13 +852,19 @@ app.get("/api/reports/summary", async (req, res) => {
     ]).then(result => result[0]?.amount || 0);
     console.log("Today's Total Expense:", todaysTotalExpense);
 
-    // Total Monthly Expense (April 2025)
-    const monthStart = new Date(toDate.getFullYear(), toDate.getMonth(), 1);
-    const monthEnd = new Date(toDate.getFullYear(), toDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    const todayTransactions = rawTransactions.filter(tx => {
+      const txDate = new Date(tx.date);
+      return txDate >= todayStart && txDate < todayEnd;
+    });
+    console.log("Today's Filtered Transactions:", todayTransactions.length);
+
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
     const totalMonthlyExpense = await Transaction.aggregate([
       {
         $match: {
           date: { $gte: monthStart, $lte: monthEnd },
+          amount: { $ne: null }
         },
       },
       {
@@ -806,11 +882,11 @@ app.get("/api/reports/summary", async (req, res) => {
     ]).then(result => result[0]?.amount || 0);
     console.log("Total Monthly Expense:", totalMonthlyExpense);
 
-    // Daily Expenses (Today's expenses with time)
     const dailyExpenses = await Transaction.aggregate([
       {
         $match: {
           date: { $gte: todayStart, $lt: todayEnd },
+          amount: { $ne: null }
         },
       },
       {
@@ -824,7 +900,6 @@ app.get("/api/reports/summary", async (req, res) => {
     ]);
     console.log("Daily Expenses:", dailyExpenses);
 
-    // Previous Day Expenses (April 27, 2025)
     const prevDay = new Date(today);
     prevDay.setDate(prevDay.getDate() - 1);
     const prevDayStart = new Date(prevDay.getFullYear(), prevDay.getMonth(), prevDay.getDate());
@@ -833,6 +908,7 @@ app.get("/api/reports/summary", async (req, res) => {
       {
         $match: {
           date: { $gte: prevDayStart, $lt: prevDayEnd },
+          amount: { $ne: null }
         },
       },
       {
@@ -850,7 +926,6 @@ app.get("/api/reports/summary", async (req, res) => {
     ]).then(result => result[0]?.amount || 0);
     console.log("Previous Day Expenses:", prevDayExpenses);
 
-    // Weekly Aggregation (Expenses only)
     const weekly = await Transaction.aggregate([
       { $match: query },
       {
@@ -875,7 +950,6 @@ app.get("/api/reports/summary", async (req, res) => {
     ]);
     console.log("Weekly Data:", weekly);
 
-    // Monthly Aggregation (Expenses only)
     const monthly = await Transaction.aggregate([
       { $match: query },
       {
@@ -909,9 +983,15 @@ app.get("/api/reports/summary", async (req, res) => {
     ]);
     console.log("Monthly Data:", monthly);
 
-    // Yearly Aggregation (Expenses only)
+    // Fixed yearly aggregation to cover only 2025
+    const yearStart = new Date(2025, 0, 1); // January 1, 2025
+    const yearEnd = new Date(2025, 11, 31, 23, 59, 59, 999); // December 31, 2025
+    const yearlyQuery = {
+      date: { $gte: yearStart, $lte: yearEnd },
+      amount: { $ne: null }
+    };
     const yearly = await Transaction.aggregate([
-      { $match: query },
+      { $match: yearlyQuery },
       {
         $group: {
           _id: { $year: "$date" },
@@ -929,7 +1009,6 @@ app.get("/api/reports/summary", async (req, res) => {
     ]);
     console.log("Yearly Data:", yearly);
 
-    // Category Breakdown
     const categories = await Transaction.aggregate([
       { $match: query },
       {
@@ -949,17 +1028,62 @@ app.get("/api/reports/summary", async (req, res) => {
     ]);
     console.log("Categories:", categories);
 
-    // Trends (CashFlowPrediction) - Adjusted to reflect expenses only
-    const trends = await CashFlowPrediction.find({
-      month: { $gte: from.slice(0, 7), $lte: to.slice(0, 7) },
-    }).sort({ month: 1 });
-    const trendsArray = trends.map(t => ({
-      month: new Date(`${t.month}-01`).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
-      net: Math.abs(t.actualCashFlow || t.predictedCashFlow || 0), // Positive value for expenses
-    }));
-    console.log("Trends:", trendsArray);
+    // Fixed previousMonthsByCategory to cover last 3 months (Feb-Apr 2025)
+    const prevMonthsStart = new Date(2025, 1, 1); // February 1, 2025
+    const prevMonthsEnd = new Date(2025, 3, 30, 23, 59, 59, 999); // April 30, 2025
+    const previousMonthsByCategory = await Transaction.aggregate([
+      {
+        $match: {
+          date: { $gte: prevMonthsStart, $lte: prevMonthsEnd },
+          amount: { $ne: null },
+          category: { $ne: null } // Exclude null categories
+        },
+      },
+      {
+        $group: {
+          _id: {
+            month: { $dateToString: { format: "%Y-%m", date: "$date" } },
+            category: "$category"
+          },
+          amount: { $sum: "$amount" },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.month",
+          categories: {
+            $push: {
+              category: "$_id.category",
+              amount: "$amount",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          month: {
+            $let: {
+              vars: {
+                months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                monthNum: { $toInt: { $substr: ["$_id", 5, 2] } },
+              },
+              in: {
+                $concat: [
+                  { $arrayElemAt: ["$$months", { $subtract: ["$$monthNum", 1] }] },
+                  " ",
+                  { $substr: ["$_id", 0, 4] },
+                ],
+              },
+            },
+          },
+          categories: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { month: 1 } },
+    ]);
+    console.log("Previous Months by Category:", previousMonthsByCategory);
 
-    // Total Expenses
     const totalExpenses = await Transaction.aggregate([
       { $match: query },
       {
@@ -977,63 +1101,37 @@ app.get("/api/reports/summary", async (req, res) => {
       monthly,
       yearly,
       categories,
-      trends: trendsArray,
+      previousMonthsByCategory,
       prevDayExpenses,
       todaysTotalExpense,
       totalMonthlyExpense,
-      totalExpenses,
+      totalExpenses
     };
 
-    console.log("Final Response:", response);
     res.json(response);
   } catch (error) {
-    console.error("Error in /api/reports/summary:", error.stack);
+    console.error("Error generating report summary:", error);
     res.status(500).json({ message: `Server error: ${error.message}` });
   }
 });
 
-app.get("/api/reports/download", async (req, res) => {
+// === Projection Routes ===
+app.get('/api/projections', async (req, res) => {
   try {
-    const { from, to, format } = req.query;
-    if (!from || !to || !format) {
-      return res.status(400).json({ message: "From, to, and format are required" });
-    }
-
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
-    if (isNaN(fromDate) || isNaN(toDate)) {
-      return res.status(400).json({ message: "Invalid date format" });
-    }
-
-    const adjustedToDate = new Date(toDate.getTime() + 86400000 - 1); // End of the day
-    const transactions = await Transaction.find({
-      date: { $gte: fromDate, $lte: adjustedToDate },
-    }, { transactionId: 1, date: 1, category: 1, amount: 1 }).lean(); // Only select required fields
-
-    console.log("Download Transactions:", transactions);
-
-    if (format === "csv") {
-      const csv = [
-        "Transaction ID,Category,Amount,Date",
-        ...transactions.map(t => `${t.transactionId},${t.category},${t.amount},${t.date.toISOString().slice(0, 10)}`),
-      ].join("\n");
-
-      res.setHeader("Content-Type", "text/csv");
-      res.setHeader("Content-Disposition", "attachment; filename=report.csv");
-      return res.send(csv);
-    } else if (format === "pdf") {
-      return res.status(501).json({ message: "PDF generation not implemented" });
-    } else {
-      return res.status(400).json({ message: "Unsupported format" });
-    }
+    const filePath = path.join(__dirname, "goal_projection.json");
+    fs.readFile(filePath, "utf8", (err, data) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to load projections" });
+      }
+      res.json(JSON.parse(data));
+    });
   } catch (error) {
-    console.error("Error in /api/reports/download:", error);
-    res.status(500).json({ message: `Server error: ${error.message}` });
+    console.error(error);
+    res.status(500).json({ error: "Error fetching projections" });
   }
 });
-//till this is temp
 
-// Start Server
+// === Server Start ===
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

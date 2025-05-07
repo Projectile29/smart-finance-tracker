@@ -24,6 +24,7 @@
       <h2>Smart Finance Tracker</h2>
       <div class="header-actions">
         <button class="toggle-btn" onclick="toggleMode()">Toggle Mode</button>
+        <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
         <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
         <button class="logout-btn">Logout</button>
       </div>
@@ -45,6 +46,12 @@
         <canvas id="spendingChart"></canvas>
       </div>
     </section>
+  </div>
+   <!-- Notification Popup Panel -->
+   <div id="notificationPanel" class="notification-panel">
+    <h3>Notifications</h3>
+    <ul id="notificationList"></ul>
+    <button onclick="clearNotifications()">Clear All</button>
   </div>
 
   <script>
