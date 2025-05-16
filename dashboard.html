@@ -1,31 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Finance Tracker</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard | Smart Finance Tracker</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="dashboard.css" />
   <script defer src="dashboard.js"></script>
 </head>
 <body>
   <aside class="sidebar">
-    <a href="./expense.html"><i class="fas fa-wallet"></i> Expenses</a>
-    <a href="./budget.html"><i class="fas fa-coins"></i> Budget</a>
-    <a href="./reports.html"><i class="fas fa-chart-bar"></i> Reports</a>
-    <a href="./goals.html"><i class="fas fa-bullseye"></i> Goals</a>
-    <a href="./cashflow-prediction.html"><i class="fas fa-wave-square"></i> Cash Flow</a>
+    <div class="logo">💰 SFT</div>
+    <nav>
+      <a href="./expense.html"><i class="fas fa-wallet"></i><span>Expenses</span></a>
+      <a href="./budget.html"><i class="fas fa-coins"></i><span>Budget</span></a>
+      <a href="./reports.html"><i class="fas fa-chart-bar"></i><span>Reports</span></a>
+      <a href="./goals.html"><i class="fas fa-bullseye"></i><span>Goals</span></a>
+      <a href="./cashflow-prediction.html"><i class="fas fa-wave-square"></i><span>Cash Flow</span></a>
+    </nav>
   </aside>
 
-  <div class="main">
+  <main class="main">
     <header>
-      <h2>Smart Finance Tracker</h2>
+      <h1>Dashboard</h1>
       <div class="header-actions">
-        <button class="toggle-btn" onclick="toggleMode()">Toggle Mode</button>
-        <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
-        <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
+        <button class="toggle-btn" onclick="toggleMode()">🌗</button>
+        <button class="icon-btn" onclick="toggleNotifications()"><i class="fas fa-bell"></i></button>
+        <a href="./profile.html" class="icon-btn"><i class="fas fa-user-circle"></i></a>
         <button class="logout-btn">Logout</button>
       </div>
     </header>
@@ -34,21 +37,21 @@
       <div class="card" id="total-expenses-card">Total Expenses<br>Loading...</div>
       <div class="card" id="savings-overview-card">Savings Overview<br>₹50,000</div>
       <div class="card" id="remaining-budget-card">Remaining Budget<br>₹<span id="remaining-budget">Loading...</span></div>
-      <div class="card">
-        Income Goal<br>
-        <div style="width: 100%; background: #eee; border-radius: 10px; height: 10px;">
-          <div style="width: 67%; height: 100%; background: var(--primary); border-radius: 10px;"></div>
+      <div class="card goal-card">
+        Income Goal<br />
+        <div class="progress-bar">
+          <div class="progress" style="width: 67%;"></div>
         </div>
       </div>
       <div class="card" id="income-card">Income<br>₹<span id="income-amount">Loading...</span></div>
-      <div class="card" style="grid-column: span 2;">
-        <h4>Monthly Spending</h4>
+      <div class="card chart-card">
+        <h3>Monthly Spending</h3>
         <canvas id="spendingChart"></canvas>
       </div>
     </section>
-  </div>
-   <!-- Notification Popup Panel -->
-   <div id="notificationPanel" class="notification-panel">
+  </main>
+
+  <div id="notificationPanel" class="notification-panel">
     <h3>Notifications</h3>
     <ul id="notificationList"></ul>
     <button onclick="clearNotifications()">Clear All</button>
