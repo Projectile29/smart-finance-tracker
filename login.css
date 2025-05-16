@@ -41,8 +41,10 @@ body {
 }
 
 .illustration img {
-  max-width: 100%;
+  width: 100%;
   height: auto;
+  max-width: 500px;
+  animation: fadeIn 2s ease-in;
 }
 
 /* Right Side: Login Form */
@@ -51,8 +53,9 @@ body {
   padding: 40px 20px;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Vertically center the form */
-  align-items: flex-start; /* Align form items to the left */
+  justify-content: center;
+  align-items: flex-start;
+  animation: fadeInUp 1s ease-out;
 }
 
 .login-form h1 {
@@ -72,17 +75,24 @@ body {
 }
 
 .login-form input {
-  width: 80%; /* Wider input boxes */
+  width: 80%;
   padding: 15px;
   margin-bottom: 20px;
   border: 1px solid #ddd;
   border-radius: 10px;
   font-size: 14px;
   margin-left: 200px;
+  transition: all 0.3s ease;
+}
+
+.login-form input:focus {
+  border-color: #58a5f0;
+  box-shadow: 0 0 5px rgba(88, 165, 240, 0.5);
+  outline: none;
 }
 
 .login-form button {
-  width: 80%; /* Wider button */
+  width: 80%;
   padding: 15px;
   background-color: #333;
   color: #fff;
@@ -91,10 +101,12 @@ body {
   border-radius: 10px;
   cursor: pointer;
   margin-left: 200px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .login-form button:hover {
   background-color: #444;
+  transform: translateY(-2px);
 }
 
 .forgot-password {
@@ -104,10 +116,12 @@ body {
   color: #58a5f0;
   text-decoration: none;
   margin-left: 200px;
+  transition: color 0.3s ease;
 }
 
 .forgot-password:hover {
   text-decoration: underline;
+  color: #1e88e5;
 }
 
 .signup-text {
@@ -118,11 +132,30 @@ body {
   margin-left: 200px;
 }
 
-.signin-text a {
+.signup-text a {
   color: #58a5f0;
   text-decoration: none;
+  transition: color 0.3s ease;
 }
 
 .signup-text a:hover {
   text-decoration: underline;
+  color: #1e88e5;
+}
+
+/* === Animation Keyframes === */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

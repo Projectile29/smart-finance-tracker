@@ -41,8 +41,10 @@ body {
 }
 
 .illustration img {
-  max-width: 100%;
+  width: 100%;
   height: auto;
+  max-width: 500px;
+  animation: fadeIn 2s ease-in;
 }
 
 /* Right Side: Signup Form */
@@ -53,6 +55,7 @@ body {
   flex-direction: column;
   justify-content: center; /* Vertically centers the form */
   align-items: flex-start; /* Horizontally center the form */
+  animation: fadeInUp 1s ease-out;
 }
 
 .signup-form h1 {
@@ -79,6 +82,13 @@ body {
   border-radius: 10px;
   font-size: 14px;
   margin-left: 200px;
+  transition: all 0.3s ease;
+}
+
+.signup-form input:focus {
+  border-color: #58a5f0;
+  box-shadow: 0 0 5px rgba(88, 165, 240, 0.5);
+  outline: none;
 }
 
 .signup-form button {
@@ -91,10 +101,12 @@ body {
   border-radius: 10px;
   cursor: pointer;
   margin-left: 200px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .signup-form button:hover {
   background-color: #444;
+  transform: translateY(-2px);
 }
 
 .login-text {
@@ -108,8 +120,27 @@ body {
 .login-text a {
   color: #58a5f0;
   text-decoration: none;
+  transition: color 0.3s ease, text-decoration 0.3s ease;
 }
 
 .login-text a:hover {
   text-decoration: underline;
+  color: #1e88e5;
+}
+
+/* === Animation Keyframes === */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
