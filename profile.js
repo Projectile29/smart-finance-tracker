@@ -23,10 +23,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         document.getElementById("gender").value = data.gender || "";
         document.getElementById("country").value = data.country || "";
         document.getElementById("state").value = data.state || "";
-        
-        // to load salary data**
-        document.getElementById("salary-amount").value = data.salaryAmount || "";
-        document.getElementById("salary-day").value = data.salaryDay || "";
+
+        // Skip salary fields since they're removed from HTML
 
         // Set profile picture dynamically
         const profilePicElement = document.getElementById("profile-pic");
@@ -84,16 +82,9 @@ async function saveProfile() {
         gender: document.getElementById("gender").value,
         country: document.getElementById("country").value,
         state: document.getElementById("state").value,
-        email: userEmail,
-        salaryAmount: document.getElementById("salary-amount").value.trim(),  
-        salaryDay: document.getElementById("salary-day").value.trim() 
+        email: userEmail
+        // Removed salaryAmount and salaryDay
     };
-
-    // Ensure salary fields are not empty (optional validation)
-    if (!updatedData.salaryAmount || !updatedData.salaryDay) {
-        alert("Please enter both salary amount and salary day.");
-        return;
-    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/profile`, {
@@ -117,6 +108,7 @@ async function saveProfile() {
         alert("Error updating profile. Please try again.");
     }
 }
+
 // Notification Functions
 function addNotification(message) {
     const notificationList = document.getElementById('notificationList');
