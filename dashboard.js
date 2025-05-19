@@ -87,20 +87,34 @@ document.addEventListener("DOMContentLoaded", async () => {
                 throw new Error("User email not found in local storage!");
             }
 
-            console.log("Fetching salary for:", userEmail);
-            const response = await fetch(`http://localhost:5000/salary?email=${userEmail}`);
+            console.log("Fetching transactions for salary for:", userEmail);
+            const response = await fetch(`http://localhost:5000/transactions?email=${userEmail}`);
             if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
 
-            const data = await response.json();
-            console.log("Fetched Salary Data:", data);
+            const transactions = await response.json();
+            console.log("Fetched Transactions:", transactions);
 
-            const salary = parseFloat(data.salary);
-            if (isNaN(salary)) {
-                throw new Error("Invalid salary data");
-            }
+            // Get current month and year
+            const now = new Date();
+            const currentMonth = now.getMonth(); // 0-based (Jan=0)
+            const currentYear = now.getFullYear();
+
+            // Filter for salary transactions in current month and year
+            const currentMonthSalaryTransactions = transactions.filter(tx => {
+                if (tx.category && tx.category.toLowerCase() === "salary") {
+                    const txDate = new Date(tx.date);
+                    return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
+                }
+                return false;
+            });
+
+            const totalSalary = currentMonthSalaryTransactions.reduce((sum, tx) => {
+                const amount = parseFloat(tx.amount);
+                return sum + (isNaN(amount) ? 0 : amount);
+            }, 0);
 
             if (incomeCard) {
-                incomeCard.innerHTML = `Income<br>₹${salary.toFixed(2)}`;
+                incomeCard.innerHTML = `Income<br>₹${totalSalary.toFixed(2)}`;
             } else {
                 console.error("Income card element not found!");
             }
@@ -156,27 +170,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("Error fetching dashboard data:", error);
     }
     
-// Notification Functions
-function addNotification(message) {
-    const notificationList = document.getElementById('notificationList');
-    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    notifications.push(message);
-    localStorage.setItem('notifications', JSON.stringify(notifications));
+    // Notification Functions
+    function addNotification(message) {
+        const notificationList = document.getElementById('notificationList');
+        const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+        notifications.push(message);
+        localStorage.setItem('notifications', JSON.stringify(notifications));
 
-    const li = document.createElement('li');
-    li.textContent = message;
-    notificationList.appendChild(li);
-}
+        const li = document.createElement('li');
+        li.textContent = message;
+        notificationList.appendChild(li);
+    }
 
-function toggleNotifications() {
-    const panel = document.getElementById('notificationPanel');
-    panel.classList.toggle('show-panel');
-}
+    function toggleNotifications() {
+        const panel = document.getElementById('notificationPanel');
+        panel.classList.toggle('show-panel');
+    }
 
-function clearNotifications() {
-    localStorage.removeItem('notifications');
-    document.getElementById('notificationList').innerHTML = '';
-}
+    function clearNotifications() {
+        localStorage.removeItem('notifications');
+        document.getElementById('notificationList').innerHTML = '';
+    }
 
     const logoutBtn = document.querySelector(".logout-btn");
     if (logoutBtn) {
