@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
-    // 🔒 Redirect if not logged in
+    // Redirect if not logged in
     const userEmail = localStorage.getItem("userEmail");
     if (!userEmail) {
         window.location.href = "login.html";
@@ -14,92 +14,93 @@ document.addEventListener("DOMContentLoaded", async () => {
     const spendingChart = new Chart(spendingChartCanvas, {
         type: 'bar',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+            labels: [],
             datasets: [{
                 label: 'Spending',
-                data: [0, 0, 0, 0, 0],
+                data: [],
                 backgroundColor: 'rgba(79, 70, 229, 0.7)',
             }]
         },
         options: {
             responsive: true,
-            plugins: {
-                legend: { display: false },
-            },
-            scales: {
-                y: { beginAtZero: true }
-            }
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
         }
     });
 
-    async function fetchTotalExpenses() {
+    async function fetchAndUpdateExpenses() {
         try {
-            console.log("Fetching total expenses...");
-            const response = await fetch("http://localhost:5000/transactions");
+            const response = await fetch(`http://localhost:5000/transactions?email=${userEmail}`);
             if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
 
             const transactions = await response.json();
-            if (!Array.isArray(transactions)) throw new Error("Transactions is not an array");
 
-            console.log("Fetched Transactions:", transactions);
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
 
-            const totalAmount = transactions.reduce((sum, tx) => {
+            // Filter non-salary transactions of current month
+            const currentMonthExpenses = transactions.filter(tx => {
+                if (tx.category && tx.category.toLowerCase() !== "salary") {
+                    const txDate = new Date(tx.date);
+                    return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
+                }
+                return false;
+            });
+
+            const totalExpenses = currentMonthExpenses.reduce((sum, tx) => {
                 const amount = parseFloat(tx.amount);
                 return sum + (isNaN(amount) ? 0 : amount);
             }, 0);
 
             if (totalExpensesCard) {
-                totalExpensesCard.innerHTML = `Total Expenses<br>₹${totalAmount.toFixed(2)}`;
-            } else {
-                console.error("Total Expenses card element not found!");
+                totalExpensesCard.innerHTML = `Total Expenses<br>₹${totalExpenses.toFixed(2)}`;
             }
 
+            // For spending chart: last 5 months total spending excluding salary
             const monthlySpending = {};
             transactions.forEach(tx => {
-                const date = new Date(tx.date);
-                const month = date.toLocaleString('default', { month: 'short' });
-                const amount = parseFloat(tx.amount) || 0;
-                monthlySpending[month] = (monthlySpending[month] || 0) + amount;
+                if (tx.category && tx.category.toLowerCase() !== "salary") {
+                    const date = new Date(tx.date);
+                    const monthYear = date.toLocaleString('default', { month: 'short' }) + ' ' + date.getFullYear();
+                    const amount = parseFloat(tx.amount) || 0;
+                    monthlySpending[monthYear] = (monthlySpending[monthYear] || 0) + amount;
+                }
             });
 
-            const labels = Object.keys(monthlySpending).slice(0, 5);
-            const data = Object.values(monthlySpending).slice(0, 5);
+            // Sort months (by date) and get last 5
+            const sortedMonths = Object.keys(monthlySpending).sort((a, b) => {
+                const [monthA, yearA] = a.split(' ');
+                const [monthB, yearB] = b.split(' ');
+                const dateA = new Date(`${monthA} 1, ${yearA}`);
+                const dateB = new Date(`${monthB} 1, ${yearB}`);
+                return dateA - dateB;
+            });
 
-            spendingChart.data.labels = labels.length ? labels : ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
-            spendingChart.data.datasets[0].data = data.length ? data : [0, 0, 0, 0, 0];
+            const last5Months = sortedMonths.slice(-5);
+            const spendingData = last5Months.map(m => monthlySpending[m]);
+
+            spendingChart.data.labels = last5Months;
+            spendingChart.data.datasets[0].data = spendingData;
             spendingChart.update();
 
         } catch (error) {
-            console.error("Error fetching total expenses:", error);
-            if (totalExpensesCard) {
-                totalExpensesCard.innerHTML = "Total Expenses<br>Error loading data";
-            }
+            console.error("Error fetching expenses:", error);
+            if (totalExpensesCard) totalExpensesCard.innerHTML = "Total Expenses<br>Error loading data";
         }
     }
 
     async function fetchAndUpdateSalary() {
         try {
-            const userEmail = localStorage.getItem("userEmail");
-            if (!userEmail) {
-                if (incomeCard) {
-                    incomeCard.innerHTML = "Income<br>Please log in";
-                }
-                throw new Error("User email not found in local storage!");
-            }
-
-            console.log("Fetching transactions for salary for:", userEmail);
             const response = await fetch(`http://localhost:5000/transactions?email=${userEmail}`);
             if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
 
             const transactions = await response.json();
-            console.log("Fetched Transactions:", transactions);
 
-            // Get current month and year
             const now = new Date();
-            const currentMonth = now.getMonth(); // 0-based (Jan=0)
+            const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
 
-            // Filter for salary transactions in current month and year
             const currentMonthSalaryTransactions = transactions.filter(tx => {
                 if (tx.category && tx.category.toLowerCase() === "salary") {
                     const txDate = new Date(tx.date);
@@ -115,25 +116,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (incomeCard) {
                 incomeCard.innerHTML = `Income<br>₹${totalSalary.toFixed(2)}`;
-            } else {
-                console.error("Income card element not found!");
             }
         } catch (error) {
             console.error("Error fetching salary data:", error);
-            if (incomeCard) {
-                incomeCard.innerHTML = "Income<br>Error loading data";
-            }
+            if (incomeCard) incomeCard.innerHTML = "Income<br>Error loading data";
         }
     }
 
     async function fetchRemainingBudget() {
         try {
-            console.log("Fetching budgets...");
             const response = await fetch("http://localhost:5000/budgets");
             if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
 
             const budgets = await response.json();
-            if (!Array.isArray(budgets)) throw new Error("Budgets is not an array");
 
             const totalBudget = budgets.reduce((sum, budget) => {
                 const budgetAmount = parseFloat(budget.budget);
@@ -149,28 +144,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (remainingBudgetCard) {
                 remainingBudgetCard.innerHTML = `Remaining Budget<br>₹${remaining.toFixed(2)}`;
-            } else {
-                console.error("Remaining budget card element not found!");
             }
         } catch (error) {
             console.error("Error fetching remaining budget:", error);
-            if (remainingBudgetCard) {
-                remainingBudgetCard.innerHTML = "Remaining Budget<br>Error loading data";
-            }
+            if (remainingBudgetCard) remainingBudgetCard.innerHTML = "Remaining Budget<br>Error loading data";
         }
     }
 
     try {
         await Promise.all([
-            fetchTotalExpenses(),
+            fetchAndUpdateExpenses(),
             fetchAndUpdateSalary(),
             fetchRemainingBudget()
         ]);
     } catch (error) {
         console.error("Error fetching dashboard data:", error);
     }
-    
-    // Notification Functions
+
+    // Notification & logout code unchanged below (keep as is)
+
     function addNotification(message) {
         const notificationList = document.getElementById('notificationList');
         const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
@@ -199,7 +191,5 @@ document.addEventListener("DOMContentLoaded", async () => {
             localStorage.removeItem("userEmail");
             window.location.href = "login.html";
         });
-    } else {
-        console.warn("Logout button not found!");
     }
 });
