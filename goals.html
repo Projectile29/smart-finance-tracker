@@ -14,7 +14,7 @@
     <a href="./expense.html"><i class="fas fa-wallet"></i> Expenses</a>
     <a href="./budget.html"><i class="fas fa-coins"></i> Budget</a>
     <a href="./reports.html"><i class="fas fa-chart-bar"></i> Reports</a>
-    <a href="./goals.html"><i class="fas fa-bullseye"></i> Goals</a>
+    <a href="./goals.html" class="active"><i class="fas fa-bullseye"></i> Goals</a>
     <a href="./cashflow-prediction.html"><i class="fas fa-wave-square"></i> Cash Flow</a>
   </aside>
 
@@ -26,66 +26,207 @@
         <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
         <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
       </div>
+      <div class="notification-panel" id="notificationPanel">
+        <h3>Notifications</h3>
+        <ul id="notificationList"></ul>
+        <button onclick="clearNotifications()">Clear All</button>
+      </div>
     </header>
 
     <div class="content">
-            <div class="card goals-header">
-                <h2>Goals</h2>
-                <button class="add-btn" id="addGoalBtn">Add Goal</button>
-            </div>
-
-            <div class="goals-container" id="goalsContainer"></div>
-
-            <div class="card goal-projection">
-                <h3>AI-Based Goal Projection</h3>
-                <div class="goal-container">
-                    <p id="goalProgress">Projected Savings: ₹0.00</p>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" id="goalBar"></div>
-                    </div>
-                    <p id="completionDate">Projected Completion: Loading...</p>
-                </div>
-            </div>
-
-            <div class="notification-panel" id="notificationPanel">
-                <h3>Notifications</h3>
-                <ul id="notificationList"></ul>
-                <button onclick="clearNotifications()">Clear All</button>
-            </div>
+      <div class="card goals-header">
+        <h2>Financial Goals</h2>
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="cards"><i class="fas fa-th"></i> Cards</button>
+          <button class="view-btn" data-view="timeline"><i class="fas fa-stream"></i> Timeline</button>
         </div>
+        <button class="add-btn" id="addGoalBtn"><i class="fas fa-plus"></i> Add Goal</button>
+      </div>
 
-        <div class="backdrop" id="backdrop"></div>
+      <!-- Main Goals Display Area -->
+      <div class="view-container card-view" id="goalsCardView">
+        <!-- Goals cards will be inserted here -->
+      </div>
 
-        <div class="popup" id="goalModal">
-            <div class="popup-content">
-                <span class="close" onclick="document.getElementById('goalModal').style.display='none'">&times;</span>
-                <h3>Add Goal</h3>
-                <label for="goalName">Goal Name:</label>
-                <input type="text" id="goalName">
-                <label for="targetAmount">Target Amount:</label>
-                <input type="number" id="targetAmount">
-                <label for="currentSavings">Current Savings:</label>
-                <input type="number" id="currentSavings">
-                <button id="saveGoalBtn">Save Goal</button>
+      <div class="view-container timeline-view hidden" id="goalsTimelineView">
+        <!-- Timeline will be inserted here -->
+      </div>
+
+      <!-- Overall Goal Stats -->
+      <div class="card goal-stats">
+        <h3>Your Goal Summary</h3>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon"><i class="fas fa-flag-checkered"></i></div>
+            <div class="stat-content">
+              <h4>Total Goals</h4>
+              <p id="totalGoalsCount">0</p>
             </div>
-        </div>
-
-        <div class="popup" id="editGoalModal">
-            <div class="popup-content">
-                <span class="close" onclick="document.getElementById('editGoalModal').style.display='none'">&times;</span>
-                <h3>Edit Goal</h3>
-                <input type="hidden" id="editGoalId">
-                <label for="editGoalName">Goal Name:</label>
-                <input type="text" id="editGoalName">
-                <label for="editTargetAmount">Target Amount:</label>
-                <input type="number" id="editTargetAmount">
-                <label for="editCurrentSavings">Current Savings:</label>
-                <input type="number" id="editCurrentSavings">
-                <button id="saveEditGoalBtn">Save Changes</button>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon"><i class="fas fa-coins"></i></div>
+            <div class="stat-content">
+              <h4>Total Target</h4>
+              <p id="totalTargetAmount">₹0</p>
             </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon"><i class="fas fa-piggy-bank"></i></div>
+            <div class="stat-content">
+              <h4>Total Saved</h4>
+              <p id="totalSavedAmount">₹0</p>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-content">
+              <h4>Average Progress</h4>
+              <p id="averageProgress">0%</p>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
 
-    <script src="goals.js"></script>
+    <!-- Modal Backdrop -->
+    <div class="backdrop" id="backdrop"></div>
+
+    <!-- Add Goal Modal -->
+    <div class="popup" id="goalModal">
+      <div class="popup-content">
+        <span class="close">×</span>
+        <h3>Create New Goal</h3>
+        <form id="addGoalForm">
+          <div class="form-group">
+            <label for="goalName">Goal Name:</label>
+            <input type="text" id="goalName" required placeholder="e.g., New Car, Vacation">
+          </div>
+          <div class="form-group">
+            <label for="goalCategory">Category:</label>
+            <select id="goalCategory">
+              <option value="travel">Travel</option>
+              <option value="education">Education</option>
+              <option value="purchase">Major Purchase</option>
+              <option value="emergency">Emergency Fund</option>
+              <option value="retirement">Retirement</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="targetAmount">Target Amount:</label>
+            <input type="number" id="targetAmount" required min="1" placeholder="₹">
+          </div>
+          <div class="form-group">
+            <label for="currentSavings">Current Savings:</label>
+            <input type="number" id="currentSavings" required min="0" placeholder="₹">
+          </div>
+          <div class="form-group">
+            <label for="targetDate">Target Date (Optional):</label>
+            <input type="date" id="targetDate">
+          </div>
+          <button type="submit" id="saveGoalBtn">Create Goal</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Goal Modal -->
+    <div class="popup" id="editGoalModal">
+      <div class="popup-content">
+        <span class="close">×</span>
+        <h3>Edit Goal</h3>
+        <form id="editGoalForm">
+          <input type="hidden" id="editGoalId">
+          <div class="form-group">
+            <label for="editGoalName">Goal Name:</label>
+            <input type="text" id="editGoalName" required>
+          </div>
+          <div class="form-group">
+            <label for="editGoalCategory">Category:</label>
+            <select id="editGoalCategory">
+              <option value="travel">Travel</option>
+              <option value="education">Education</option>
+              <option value="purchase">Major Purchase</option>
+              <option value="emergency">Emergency Fund</option>
+              <option value="retirement">Retirement</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editTargetAmount">Target Amount:</label>
+            <input type="number" id="editTargetAmount" required min="1">
+          </div>
+          <div class="form-group">
+            <label for="editCurrentSavings">Current Savings:</label>
+            <input type="number" id="editCurrentSavings" required min="0">
+          </div>
+          <div class="form-group">
+            <label for="editTargetDate">Target Date:</label>
+            <input type="date" id="editTargetDate">
+          </div>
+          <div class="button-group">
+            <button type="submit" id="saveEditGoalBtn">Save Changes</button>
+            <button type="button" id="deleteGoalBtn" class="delete-btn">Delete Goal</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Individual Goal Projection Modal -->
+    <div class="popup" id="goalProjectionModal">
+      <div class="popup-content">
+        <span class="close">×</span>
+        <h3>Goal Projection</h3>
+        <div id="projectionContent">
+          <h4 id="projectionGoalName">Goal Name</h4>
+          
+          <div class="projection-detail">
+            <div class="projection-stat">
+              <span class="stat-label">Current Savings</span>
+              <span class="stat-value" id="projectionCurrentSavings">₹0</span>
+            </div>
+            <div class="projection-stat">
+              <span class="stat-label">Target Amount</span>
+              <span class="stat-value" id="projectionTargetAmount">₹0</span>
+            </div>
+          </div>
+          
+          <div class="projection-progress">
+            <div class="progress-label">
+              <span>Progress</span>
+              <span id="projectionProgressPercent">0%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar" id="projectionProgressBar"></div>
+            </div>
+          </div>
+          
+          <div class="projection-detail">
+            <div class="projection-stat">
+              <span class="stat-label">Monthly Savings</span>
+              <span class="stat-value" id="projectionMonthlySavings">₹0</span>
+            </div>
+            <div class="projection-stat">
+              <span class="stat-label">Time Remaining</span>
+              <span class="stat-value" id="projectionTimeRemaining">0 months</span>
+            </div>
+          </div>
+          
+          <div class="projection-completion">
+            <i class="fas fa-calendar-check"></i>
+            <span id="projectionCompletionDate">Projected completion by December 2025</span>
+          </div>
+          
+          <div class="projection-suggestions">
+            <h5>AI Suggestions</h5>
+            <ul id="projectionSuggestions">
+              <li>Loading suggestions...</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="goals.js"></script>
 </body>
 </html>
