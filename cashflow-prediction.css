@@ -5,6 +5,13 @@
   --text: #111827;
   --sidebar-bg: #1e293b;
   --sidebar-text: #ffffff;
+  --gradient-blue-start: #3b82f6; /* Medium Blue */
+  --gradient-blue-end: #1e3a8a; /* Dark Blue */
+  --prediction-bg-start: #60a5fa; /* Soft Blue */
+  --prediction-bg-end: #2563eb; /* Darker Blue */
+  --gradient-start: #bfdbfe; /* Very Light Blue */
+  --gradient-mid: #60a5fa; /* Soft Blue */
+  --gradient-end: #3b82f6; /* Medium Blue */
 }
 
 body.dark {
@@ -14,6 +21,13 @@ body.dark {
   --text: #f8fafc;
   --sidebar-bg: #0f172a;
   --sidebar-text: #cbd5e1;
+  --gradient-blue-start: #60a5fa; /* Lighter Blue */
+  --gradient-blue-end: #1e40af; /* Darker Blue */
+  --prediction-bg-start: #93c5fd; /* Lighter Blue */
+  --prediction-bg-end: #1e40af; /* Darker Blue */
+  --gradient-start: #93c5fd; /* Lighter Blue */
+  --gradient-mid: #60a5fa; /* Soft Blue */
+  --gradient-end: #2563eb; /* Darker Blue */
 }
 
 * {
@@ -64,6 +78,16 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  background: linear-gradient(45deg, var(--gradient-start), var(--gradient-mid), var(--gradient-end));
+  background-size: 300% 300%;
+  animation: gradientFlow 12s ease-in-out infinite;
+  position: relative;
+}
+
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 header {
@@ -169,8 +193,8 @@ header {
 .switch {
   position: relative;
   display: inline-block;
-  width: 60px;
-  height: 30px;
+  width: 100px;
+  height: 40px;
 }
 
 .switch input {
@@ -186,16 +210,23 @@ header {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background: linear-gradient(135deg, var(--gradient-blue-start), var(--gradient-blue-end));
   transition: 0.4s;
-  border-radius: 30px;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 0.9rem;
+  color: white;
+  font-weight: 600;
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 22px;
-  width: 22px;
+  height: 32px;
+  width: 32px;
   left: 4px;
   bottom: 4px;
   background-color: white;
@@ -203,12 +234,24 @@ header {
   border-radius: 50%;
 }
 
+.slider:after {
+  content: "Future";
+  position: absolute;
+  right: 10px;
+}
+
+input:checked + .slider:after {
+  content: "Past";
+  left: 10px;
+  right: auto;
+}
+
 input:checked + .slider {
-  background-color: var(--primary);
+  background: linear-gradient(135deg, var(--gradient-blue-start), var(--gradient-blue-end));
 }
 
 input:checked + .slider:before {
-  transform: translateX(30px);
+  transform: translateX(60px);
 }
 
 /* Prediction Cards Grid */
@@ -221,8 +264,8 @@ input:checked + .slider:before {
 }
 
 .prediction-window {
-  background: var(--card-bg);
-  border: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, var(--prediction-bg-start), var(--prediction-bg-end));
+  border: none;
   border-radius: 16px;
   padding: 28px 24px;
   width: 100%;
@@ -238,8 +281,8 @@ input:checked + .slider:before {
 }
 
 .prediction-window:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+  transform: translateY(-6px) scale(1.05) rotate(2deg);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1);
 }
 
 .prediction-title {
@@ -257,11 +300,11 @@ input:checked + .slider:before {
 }
 
 .prediction-amount {
-  color: #10b981;
+  color: #95edcf;
 }
 
 .prediction-actual {
-  color: #ef4444;
+  color: #f99999;
 }
 
 /* Responsive Layout */
@@ -364,6 +407,7 @@ canvas {
   max-width: 100%;
   margin: 1rem 0;
 }
+
 .notification-panel {
   display: none;
   position: fixed;
