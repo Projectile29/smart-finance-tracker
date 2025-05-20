@@ -20,19 +20,19 @@
 
   <div class="main">
     <header>
-      <h2>Smart Finance Tracker</h2>
-      <div class="header-actions">
-        <a href="./dashboard.html"><i class="fas fa-home fa-2x"></i></a>
+      <h1>Smart Finance Tracker</h1>
+           <div class="header-actions">
+         <a href="./dashboard.html"><i class="fas fa-home fa-2x"></i></a>
         <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
         <a href="./profile.html"><i class="fas fa-user-circle fa-2x"></i></a>
       </div>
     </header>
 
-    <section class="content">
+    <div class="content">
       <div class="card budget-overview">
         <h3>Budget Overview</h3>
-        <p><strong>Total Budget:</strong> ₹<span id="totalBudget">0.00</span></p>
-        <p><strong>Total Remaining:</strong> ₹<span id="totalRemaining">0.00</span></p>
+        <p>Total Budget: ₹<span id="totalBudget">0.00</span></p>
+        <p>Total Remaining: ₹<span id="totalRemaining">0.00</span></p>
       </div>
 
       <div class="card budget-section">
@@ -41,7 +41,6 @@
           <button class="add-btn" onclick="openAddPopup()">+ Add Category</button>
           <button class="sync-btn" onclick="manualSync()">Sync Transactions</button>
         </div>
-
         <table>
           <thead>
             <tr>
@@ -55,40 +54,41 @@
           <tbody id="categoryTable"></tbody>
         </table>
       </div>
-    </section>
+    </div>
 
-    <!-- Notification Popup Panel -->
-    <div id="notificationPanel" class="notification-panel">
+    <div class="notification-panel" id="notificationPanel">
       <h3>Notifications</h3>
       <ul id="notificationList"></ul>
       <button onclick="clearNotifications()">Clear All</button>
     </div>
 
-    <!-- Add Category Popup -->
-    <div id="addPopup" class="popup">
+    <div class="backdrop" id="backdrop"></div>
+
+    <div class="popup" id="addPopup">
       <div class="popup-content">
         <span class="close" onclick="closeAddPopup()">×</span>
         <h3>Add New Category</h3>
-        <label>Category Name:</label>
+        <label for="categoryName">Category Name:</label>
         <input type="text" id="categoryName">
-        <label>Budget Amount (₹):</label>
+        <label for="categoryBudget">Budget Amount (₹):</label>
         <input type="number" id="categoryBudget">
         <button onclick="addCategory()">Add</button>
       </div>
     </div>
 
-    <!-- Edit Budget Popup -->
-    <div id="editPopup" class="popup">
+    <div class="popup" id="editPopup">
       <div class="popup-content">
         <span class="close" onclick="closeEditPopup()">×</span>
         <h3>Edit Budget</h3>
-        <label>Budget Amount (₹):</label>
+        <label for="editBudgetAmount">Budget Amount (₹):</label>
         <input type="number" id="editBudgetAmount">
-        <label>Spent Amount (₹):</label>
+        <label for="editSpentAmount">Spent Amount (₹):</label>
         <input type="number" id="editSpentAmount">
         <button onclick="updateBudget()">Update</button>
       </div>
     </div>
   </div>
+
+  <script src="budget.js"></script>
 </body>
 </html>

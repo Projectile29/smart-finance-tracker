@@ -20,8 +20,9 @@
   </aside>
 
   <div class="main">
+    <div class="backdrop"></div>
     <header>
-      <h2>Smart Finance Tracker</h2>
+      <h1>Smart Finance Tracker</h1>
       <div class="header-actions">
         <a href="./dashboard.html" aria-label="Go to Dashboard"><i class="fas fa-home fa-2x"></i></a>
         <i class="fas fa-bell fa-2x notification-bell" onclick="toggleNotifications()"></i>
@@ -29,43 +30,52 @@
       </div>
     </header>
 
-    <section class="expense-tracking">
+    <div class="expense-tracking">
       <h2>Expense Tracking</h2>
-      <button class="add-expense" onclick="openExpenseForm()" aria-label="Add New Expense">+ Add Expense</button>
 
-      <div id="expense-form" class="expense-form">
+      <div class="card expense-overview">
+        <h3>Total Expenses</h3>
+        <div class="total-expenses" id="total-expenses">Total: ₹0.00</div>
+        <button class="add-expense">+ Add Expense</button>
+      </div>
+
+      <div class="expense-form" id="expense-form">
         <h3>Add New Expense</h3>
         <div class="form-group">
           <label for="category-select">Category <span class="required">*</span></label>
-          <select id="category-select" onchange="toggleNewCategoryInput()" aria-required="true">
+          <select id="category-select">
             <option value="">Select a category</option>
-            <!-- Categories will be populated dynamically -->
             <option value="new">Add New Category</option>
           </select>
           <div id="category-error" class="error-message"></div>
         </div>
-        <div id="new-category-input" class="form-group" style="display: none;">
+
+        <div class="form-group" id="new-category-input" style="display: none;">
           <label for="new-category">New Category Name <span class="required">*</span></label>
-          <input type="text" id="new-category" placeholder="e.g., Travel" aria-required="true">
+          <input type="text" id="new-category">
           <div id="new-category-error" class="error-message"></div>
         </div>
+
         <div class="form-group">
           <label for="amount">Amount (₹) <span class="required">*</span></label>
-          <input type="number" id="amount" placeholder="e.g., 500.00" min="0" step="0.01" aria-required="true">
+          <input type="number" id="amount">
           <div id="amount-error" class="error-message"></div>
         </div>
+
         <div class="form-group">
           <label for="date">Date <span class="required">*</span></label>
-          <input type="date" id="date" aria-required="true">
+          <input type="date" id="date">
           <div id="date-error" class="error-message"></div>
         </div>
+
         <div class="form-group">
           <label for="time">Time (Optional)</label>
           <input type="time" id="time">
         </div>
+
         <div class="form-buttons">
-          <button onclick="addExpense()" aria-label="Save Expense">Save</button>
-          <button onclick="closeExpenseForm()" aria-label="Cancel">Cancel</button>
+          <button onclick="addExpense()">Save</button>
+          <button class="cancel-btn">Cancel</button>
         </div>
       </div>
 
@@ -81,36 +91,39 @@
               <th>Amount</th>
             </tr>
           </thead>
-          <tbody id="transactions-body">
-            <!-- Data will be inserted dynamically -->
-          </tbody>
+          <tbody id="transactions-body"></tbody>
         </table>
-        <button id="view-all-btn" aria-label="View All Transactions">View All</button>
+        <button id="view-all-btn">View All</button>
       </div>
+    </div>
 
-      <div class="card total-expenses">
-        <h3>Total Expenses</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Category</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody id="total-expenses-body">
-            <!-- Data will be inserted dynamically -->
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <div class="notification-panel" id="notificationPanel">
+      <h3>Notifications</h3>
+      <ul id="notificationList"></ul>
+      <button onclick="clearNotifications()">Clear All</button>
+    </div>
   </div>
- <!-- Notification Popup Panel -->
- <div id="notificationPanel" class="notification-panel">
-  <h3>Notifications</h3>
-  <ul id="notificationList"></ul>
-  <button onclick="clearNotifications()">Clear All</button>
-</div>
-  <script defer src="expense.js"></script>
+
+  <script src="expense.js"></script>
+  <script>
+    const addExpenseBtn = document.querySelector('.add-expense');
+    const expenseForm = document.getElementById('expense-form');
+    const cancelBtn = document.querySelector('.cancel-btn');
+    const backdrop = document.querySelector('.backdrop');
+
+    addExpenseBtn.addEventListener('click', () => {
+      expenseForm.classList.add('active');
+      backdrop.classList.add('active');
+      openExpenseForm();
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      expenseForm.classList.remove('active');
+      backdrop.classList.remove('active');
+      closeExpenseForm();
+    });
+
+    document.getElementById('category-select').addEventListener('change', toggleNewCategoryInput);
+  </script>
 </body>
 </html>
