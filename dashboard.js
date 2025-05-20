@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }, 0);
 
             if (totalExpensesCard) {
-                totalExpensesCard.innerHTML = `Total Expenses<br>₹${totalExpenses.toFixed(2)}`;
+                totalExpensesCard.innerHTML = `This Month's Outflow<br>₹${totalExpenses.toFixed(2)}`;
             }
 
             // For spending chart: last 5 months total spending excluding salary
@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }, 0);
 
             if (incomeCard) {
-                incomeCard.innerHTML = `Income<br>₹${totalSalary.toFixed(2)}`;
+                incomeCard.innerHTML = `Monthly Earnings<br>₹${totalSalary.toFixed(2)}`;
             }
         } catch (error) {
             console.error("Error fetching salary data:", error);
