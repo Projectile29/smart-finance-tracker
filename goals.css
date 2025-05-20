@@ -1,67 +1,95 @@
 :root {
-  --primary: #4f46e5;
-  --background: #f9fafb;
-  --card-bg: #ffffff;
-  --text: #111827;
-  --sidebar-bg: #1e293b;
-  --sidebar-text: #ffffff;
+    --primary: #4f46e5;
+    --primary-dark: #3b82f6;
+    --background: #f9fafb;
+    --card-bg: #ffffff;
+    --text: #111827;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #ffffff;
+    --error: #dc2626;
+    --gradient-start: #bfdbfe; /* Very Light Blue */
+    --gradient-mid: #60a5fa; /* Soft Blue */
+    --gradient-end: #3b82f6; /* Medium Blue */
+    --border-color: #d1d5db; /* Light gray for borders */
+    --goal-bg: #e6f7fa; /* Light teal for goal items */
+    --goal-bg-hover: #d1eff5; /* Slightly darker teal on hover */
 }
 
 body.dark {
-  --primary: #818cf8;
-  --background: #0f172a;
-  --card-bg: #1e293b;
-  --text: #f8fafc;
-  --sidebar-bg: #0f172a;
-  --sidebar-text: #cbd5e1;
+    --primary: #60a5fa;
+    --primary-dark: #3b82f6;
+    --background: #0f172a;
+    --card-bg: #1e293b;
+    --text: #f8fafc;
+    --sidebar-bg: #0f172a;
+    --sidebar-text: #cbd5e1;
+    --error: #f87171;
+    --gradient-start: #93c5fd; /* Lighter Blue */
+    --gradient-mid: #60a5fa; /* Soft Blue */
+    --gradient-end: #2563eb; /* Darker Blue */
+    --border-color: #4b5563; /* Darker gray for borders in dark mode */
+    --goal-bg: #2a5e66; /* Darker teal for dark mode */
+    --goal-bg-hover: #1e464d; /* Even darker teal on hover in dark mode */
 }
 
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-  font-family: 'Roboto', sans-serif;
-  background-color: var(--background);
-  color: var(--text);
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .sidebar {
-  background-color: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  width: 220px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 30px 20px;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 30px 20px;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar a {
-  color: inherit;
-  text-decoration: none;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  cursor: pointer;
-  border-radius: 10px;
-  transition: background 0.2s;
+    color: inherit;
+    text-decoration: none;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background 0.3s, transform 0.2s;
 }
 
 .sidebar a:hover {
-  background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
 }
 
 .main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(45deg, var(--gradient-start), var(--gradient-mid), var(--gradient-end));
+    background-size: 300% 300%;
+    animation: gradientFlow 12s ease-in-out infinite;
+    position: relative;
+}
+
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 header {
@@ -70,7 +98,8 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .header-actions {
@@ -79,242 +108,364 @@ header {
   gap: 20px;
 }
 
-.header-actions a, .header-actions i {
+.header-actions a {
   color: var(--text);
   text-decoration: none;
-  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.header-actions a:hover {
+  color: var(--primary);
 }
 
 .logout-btn {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
   background: #ef4444;
   color: white;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+  transform: scale(1.05);
 }
 
 .content {
-  padding: 30px;
-  flex: 1;
-  overflow-y: auto;
+    padding: 30px;
+    flex: 1;
+    overflow-y: auto;
+    margin: 20px;
 }
 
 .card {
-  background: var(--card-bg);
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  margin-bottom: 20px;
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .goals-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .goals-header h2 {
-  margin: 0;
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
 }
 
-.goals-header button {
-  padding: 8px 16px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
+.add-btn {
+    padding: 12px 24px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.2s;
 }
 
-.goals-header button:hover {
-  background: #3c3bb7;
+.add-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
 }
 
 .goals-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px; /* Increased gap for better separation */
+    justify-content: center; /* Center the goal items */
 }
 
 .goal-item {
-  background: var(--card-bg);
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  width: 250px;
+    background: var(--goal-bg); /* Use the new teal color */
+    padding: 20px; /* Consistent padding */
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    width: 250px;
+    transition: transform 0.3s, box-shadow 0.3s, background 0.2s;
+}
+
+.goal-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    background: var(--goal-bg-hover); /* Darker teal on hover */
 }
 
 .goal-item h4 {
-  margin: 0 0 10px;
+    margin: 0 0 12px; /* Increased spacing below title */
+    font-size: 1.2rem;
+    font-weight: 600;
 }
 
 .goal-item p {
-  margin: 5px 0;
+    margin: 8px 0; /* Adjusted spacing between paragraphs */
+    font-size: 1rem;
 }
 
 .goal-item button {
-  padding: 5px 10px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 10px;
+    padding: 8px 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.2s;
+    margin-top: 12px; /* Increased spacing above button */
 }
 
 .goal-item button:hover {
-  background: #3c3bb7;
+    background: var(--primary-dark);
+    transform: scale(1.05);
 }
 
 .goal-projection h3 {
-  margin-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    font-weight: 600;
 }
 
 .goal-container {
-  width: 100%;
-  max-width: 400px;
+    width: 100%;
+    max-width: 400px;
 }
 
 .progress-bar-container {
-  width: 100%;
-  background: #ddd;
-  border-radius: 10px;
-  height: 10px;
-  margin: 5px 0;
+    width: 100%;
+    background: #ddd;
+    border-radius: 10px;
+    height: 10px;
+    margin: 5px 0;
 }
 
 .progress-bar {
-  height: 100%;
-  background: #4caf50;
-  border-radius: 10px;
-  transition: width 0.5s ease-in-out;
+    height: 100%;
+    background: #4caf50;
+    border-radius: 10px;
+    transition: width 0.5s ease-in-out;
 }
 
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.4);
+.popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    z-index: 1001;
+    min-width: 300px;
+    max-width: 450px;
+    animation: fadeIn 0.3s ease;
 }
 
-.modal-content {
-  background: var(--card-bg);
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  width: 300px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
+.popup.active {
+    display: block;
 }
 
-.modal-content h3 {
-  margin: 0 0 15px;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -60%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
 }
 
-.modal-content label {
-  display: block;
-  text-align: left;
-  margin: 10px 0 5px;
-  font-weight: 500;
+.backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
 }
 
-.modal-content input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background: var(--background);
-  color: var(--text);
-  margin-bottom: 10px;
+.backdrop.active {
+    display: block;
 }
 
-.modal-content button {
-  padding: 8px 16px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.modal-content button:hover {
-  background: #3c3bb7;
+.popup-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .close {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: var(--text);
+    align-self: flex-end;
+    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text);
+    transition: color 0.2s;
+}
+
+.close:hover {
+    color: var(--primary);
+}
+
+.popup h3 {
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.popup label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.popup input {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--background);
+    color: var(--text);
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.popup input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.popup button {
+    padding: 12px 24px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.popup button:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
 }
 
 .notification-panel {
-  display: none;
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  width: 280px;
-  background: var(--card-bg);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  border-radius: 16px;
-  padding: 15px;
-  z-index: 1000;
+    display: none;
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 300px;
+    background: var(--card-bg);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    z-index: 1000;
+}
+
+.notification-panel.show-panel {
+    display: block;
 }
 
 .notification-panel h3 {
-  margin: 0 0 10px;
-  font-size: 1.2rem;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 8px;
+    margin: 0 0 12px;
+    font-size: 1.3rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
 }
 
 .notification-panel ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 200px;
-  overflow-y: auto;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 220px;
+    overflow-y: auto;
 }
 
 .notification-panel ul li {
-  padding: 8px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 0.9rem;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.95rem;
+    color: var(--text);
+    position: relative;
+    padding-left: 20px; /* Space for custom bullet */
+}
+
+.notification-panel ul li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #28a745; /* Green bullet color */
+    font-size: 1.5rem;
+    line-height: 1rem;
 }
 
 .notification-panel ul li:last-child {
-  border-bottom: none;
+    border-bottom: none;
 }
 
 .notification-panel button {
-  width: 100%;
-  margin-top: 10px;
-  padding: 8px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.2s;
 }
 
 .notification-panel button:hover {
-  background: #3c3bb7;
+    background: var(--primary-dark);
+    transform: scale(1.05);
 }
 
-.show-panel {
-  display: block;
+/* Responsive Design */
+@media (max-width: 600px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .content {
+        padding: 20px;
+        margin: 10px;
+    }
+
+    .popup {
+        width: 90%;
+        padding: 20px;
+        max-width: 350px;
+    }
+
+    .popup h3 {
+        font-size: 1.4rem;
+    }
+
+    .notification-panel {
+        width: 90%;
+        max-width: 280px;
+        right: 10px;
+        top: 70px;
+    }
 }

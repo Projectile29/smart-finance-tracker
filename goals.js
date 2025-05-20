@@ -16,17 +16,28 @@ document.addEventListener("DOMContentLoaded", () => {
 function initializeEventListeners() {
     document.getElementById("addGoalBtn")?.addEventListener("click", () => {
         document.getElementById("goalModal").style.display = "block";
+        document.getElementById("backdrop").classList.add("active");
     });
 
     document.querySelectorAll(".close").forEach(closeBtn => {
         closeBtn.addEventListener("click", () => {
             document.getElementById("goalModal").style.display = "none";
             document.getElementById("editGoalModal").style.display = "none";
+            document.getElementById("backdrop").classList.remove("active");
         });
     });
 
     document.getElementById("saveGoalBtn")?.addEventListener("click", saveGoal);
     document.getElementById("saveEditGoalBtn")?.addEventListener("click", saveEditedGoal);
+
+    // Close notification panel when clicking outside
+    document.addEventListener("click", function (event) {
+        const panel = document.getElementById("notificationPanel");
+        const bell = document.querySelector(".notification-bell");
+        if (!panel.contains(event.target) && !bell.contains(event.target)) {
+            panel.classList.remove("show-panel");
+        }
+    });
 }
 
 async function fetchGoalPredictions() {
@@ -104,12 +115,10 @@ function displayGoals(goals) {
             <h4>${goal.name}</h4>
             <p>Target: ₹${goal.targetAmount}</p>
             <p>Saved: ₹${goal.currentSavings}</p>
-            
             <div class="progress-bar-container">
                 <div class="progress-bar" style="width: ${progressPercent}%;"></div>
             </div>
             <p>${progressPercent.toFixed(2)}% saved</p>
-
             <button onclick="editGoal('${goal._id}')">Edit</button>
         `;
 
@@ -130,6 +139,17 @@ function editGoal(goalId) {
 
     inputId.value = goalId;
     modal.style.display = "block";
+    document.getElementById("backdrop").classList.add("active");
+
+    // Fetch goal data to prefill the form
+    fetch(`${API_BASE_URL}/goals/${goalId}`)
+        .then(response => response.json())
+        .then(goal => {
+            document.getElementById("editGoalName").value = goal.name;
+            document.getElementById("editTargetAmount").value = goal.targetAmount;
+            document.getElementById("editCurrentSavings").value = goal.currentSavings;
+        })
+        .catch(error => console.error("Error fetching goal data:", error));
 }
 
 async function saveGoal() {
@@ -159,6 +179,7 @@ async function saveGoal() {
 
         fetchGoals();
         document.getElementById("goalModal").style.display = "none";
+        document.getElementById("backdrop").classList.remove("active");
     } catch (error) {
         console.error("Error saving goal:", error);
     }
@@ -192,10 +213,12 @@ async function saveEditedGoal() {
 
         fetchGoals();
         document.getElementById("editGoalModal").style.display = "none";
+        document.getElementById("backdrop").classList.remove("active");
     } catch (error) {
         console.error("Error updating goal:", error);
     }
 }
+
 // Notification Functions
 function addNotification(message) {
     const notificationList = document.getElementById('notificationList');
@@ -216,4 +239,9 @@ function toggleNotifications() {
 function clearNotifications() {
     localStorage.removeItem('notifications');
     document.getElementById('notificationList').innerHTML = '';
+}
+
+// Toggle Dark Mode
+function toggleDarkMode() {
+    document.body.classList.toggle('dark');
 }
