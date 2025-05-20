@@ -253,7 +253,6 @@ document.addEventListener("DOMContentLoaded", function () {
       };
 
       showInfoMessage(`Current month report for ${report.month} generated successfully!`);
-      // Optionally store the report or trigger a download
       downloadReportAsCSV(report, `current_month_report_${monthStr}`);
     } catch (error) {
       console.error("Error generating current month report:", error);
@@ -652,13 +651,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
   window.openDownloadPopup = function() {
     const popup = document.getElementById("downloadPopup");
-    popup.style.display = "flex";
+    popup.style.display = "block";
+    document.getElementById("backdrop").classList.add("active");
     populateMonthSelect();
   };
 
   window.closeDownloadPopup = function() {
     const popup = document.getElementById("downloadPopup");
     popup.style.display = "none";
+    document.getElementById("backdrop").classList.remove("active");
   };
 
   window.downloadSelectedReport = async function(format) {
@@ -677,7 +678,6 @@ document.addEventListener("DOMContentLoaded", function () {
       toDate = toDate.toISOString().slice(0, 10);
 
       if (month === new Date().toISOString().slice(0, 7)) {
-        // Current month report
         const response = await fetch(
           `http://localhost:5000/api/reports/summary?from=${fromDate}&to=${toDate}&_=${Date.now()}`,
           {
@@ -704,7 +704,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (format === 'csv') {
           downloadReportAsCSV(report, `report_${month}`);
         } else {
-          // PDF download (handled by server)
           const response = await fetch(
             `http://localhost:5000/api/reports/download?from=${fromDate}&to=${toDate}&format=${format}&_=${Date.now()}`,
             {
@@ -723,13 +722,11 @@ document.addEventListener("DOMContentLoaded", function () {
           window.URL.revokeObjectURL(url);
         }
       } else {
-        // Previous month report
         const report = await generatePreviousMonthReport();
         if (!report) throw new Error("Failed to generate report");
         if (format === 'csv') {
           downloadReportAsCSV(report, `report_${month}`);
         } else {
-          // PDF download (handled by server)
           const response = await fetch(
             `http://localhost:5000/api/reports/download?from=${fromDate}&to=${toDate}&format=${format}&_=${Date.now()}`,
             {
@@ -828,6 +825,11 @@ document.addEventListener("DOMContentLoaded", function () {
       syncData();
     }
   });
+
+  // Toggle Dark Mode
+  window.toggleDarkMode = function () {
+    document.body.classList.toggle('dark');
+  };
 
   loadData();
   loadNotifications();

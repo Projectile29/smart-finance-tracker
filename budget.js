@@ -9,10 +9,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Popup Functions
 function openAddPopup() {
     document.getElementById('addPopup').style.display = 'block';
+    document.getElementById('backdrop').classList.add('active');
 }
 
 function closeAddPopup() {
     document.getElementById('addPopup').style.display = 'none';
+    document.getElementById('backdrop').classList.remove('active');
     document.getElementById('categoryName').value = '';
     document.getElementById('categoryBudget').value = '';
 }
@@ -24,6 +26,8 @@ function openEditPopup(budgetId) {
         console.error("Edit popup element not found");
         return;
     }
+
+    document.getElementById('backdrop').classList.add('active');
 
     fetch(`http://localhost:5000/budgets/${budgetId}`, {
         method: 'GET',
@@ -58,7 +62,10 @@ function openEditPopup(budgetId) {
 
 function closeEditPopup() {
     const editPopup = document.getElementById('editPopup');
-    if (editPopup) editPopup.style.display = 'none';
+    if (editPopup) {
+        editPopup.style.display = 'none';
+        document.getElementById('backdrop').classList.remove('active');
+    }
 }
 
 // Add Category (POST to /budgets) with Sync
@@ -137,17 +144,12 @@ async function fetchTransactions() {
 // Create Budget Categories from Transactions
 async function createCategoriesFromTransactions() {
     try {
-        // Get unique categories from transactions
         const transactionCategories = [...new Set(transactions.map(tx => tx.category))];
-
-        // Fetch existing budgets for the current month
-        const currentMonth = new Date().toISOString().slice(0, 7); // Format: "YYYY-MM"
+        const currentMonth = new Date().toISOString().slice(0, 7);
         const budgetsResponse = await fetch('http://localhost:5000/budgets');
         if (!budgetsResponse.ok) throw new Error('Failed to fetch budgets');
         const budgets = await budgetsResponse.json();
         const existingCategories = budgets.map(budget => budget.name);
-
-        // Create budgets for categories that don't exist
         const categoriesToCreate = transactionCategories.filter(category => !existingCategories.includes(category));
 
         for (const category of categoriesToCreate) {
@@ -157,8 +159,6 @@ async function createCategoriesFromTransactions() {
                 body: JSON.stringify({ name: category, budget: 0, spent: 0, month: currentMonth })
             });
         }
-
-        // Sync budgets after creating new categories
         await syncBudgetsWithTransactions();
     } catch (error) {
         console.error("Error creating categories from transactions:", error);
@@ -168,7 +168,7 @@ async function createCategoriesFromTransactions() {
 // Sync Budgets with Transactions
 async function syncBudgetsWithTransactions() {
     try {
-        const currentMonth = new Date().toISOString().slice(0, 7); // Format: "YYYY-MM"
+        const currentMonth = new Date().toISOString().slice(0, 7);
         const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
         const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999);
 
@@ -240,7 +240,6 @@ async function updateTable() {
         if (!response.ok) throw new Error('Failed to fetch budgets');
         let budgets = await response.json();
 
-        // Map each category to its latest transaction date
         const latestTransactionDates = {};
         transactions.forEach(tx => {
             const txDate = new Date(tx.date).getTime();
@@ -250,11 +249,10 @@ async function updateTable() {
         });
         console.log("Latest transaction dates by category:", latestTransactionDates);
 
-        // Sort budgets by latest transaction date (descending)
         budgets.sort((a, b) => {
             const dateA = latestTransactionDates[a.name] || 0;
             const dateB = latestTransactionDates[b.name] || 0;
-            return dateB - dateA; // Sort descending (latest first)
+            return dateB - dateA;
         });
         console.log("Sorted budgets:", budgets.map(b => ({ name: b.name, latestTransactionDate: latestTransactionDates[b.name] ? new Date(latestTransactionDates[b.name]).toISOString() : 'None' })));
 
@@ -324,4 +322,9 @@ window.addEventListener('transactionAdded', async () => {
 // Manual Sync
 function manualSync() {
     syncBudgetsWithTransactions();
+}
+
+// Toggle Dark Mode
+function toggleDarkMode() {
+    document.body.classList.toggle('dark');
 }

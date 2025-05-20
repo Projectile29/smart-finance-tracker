@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="reports.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <aside class="sidebar">
@@ -82,13 +83,15 @@
         <button onclick="openDownloadPopup()">Download Reports</button>
       </div>
 
-      <div id="notificationPanel" class="notification-panel">
+      <div class="notification-panel" id="notificationPanel">
         <h3>Notifications</h3>
         <ul id="notificationList"></ul>
         <button onclick="clearNotifications()">Clear Notifications</button>
       </div>
 
-      <div id="downloadPopup" class="download-popup" style="display: none;">
+      <div class="backdrop" id="backdrop"></div>
+
+      <div class="download-popup" id="downloadPopup">
         <div class="popup-content">
           <h3>Select Month to Download</h3>
           <select id="monthSelect">
@@ -103,13 +106,7 @@
       </div>
     </div>
   </div>
- <!-- Notification Popup Panel -->
- <div id="notificationPanel" class="notification-panel">
-  <h3>Notifications</h3>
-  <ul id="notificationList"></ul>
-  <button onclick="clearNotifications()">Clear All</button>
-</div>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <script src="reports.js"></script>
 </body>
 </html>

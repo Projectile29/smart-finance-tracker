@@ -119,11 +119,11 @@ function formatTime(dateString) {
 }
 
 function updateTotalExpensesUI() {
-  const totalExpensesTable = document.querySelector(".total-expenses tbody");
-  if (totalExpensesTable) {
-    totalExpensesTable.innerHTML = transactions.length > 0
-      ? `<tr><td><strong>Total</strong></td><td></td><td><strong>₹${totalAmount.toFixed(2)}</strong></td></tr>`
-      : "<tr><td colspan='3' style='text-align:center;'>No transactions found</td></tr>";
+  const totalExpensesDiv = document.getElementById("total-expenses");
+  if (totalExpensesDiv) {
+    totalExpensesDiv.innerHTML = transactions.length > 0
+      ? `Total: ₹${totalAmount.toFixed(2)}`
+      : "Total: ₹0.00";
   }
 }
 
@@ -293,6 +293,7 @@ window.addEventListener('transactionAdded', async () => {
     updateTable();
   }
 });
+
 // Notification Functions
 function addNotification(message) {
   const notificationList = document.getElementById('notificationList');
