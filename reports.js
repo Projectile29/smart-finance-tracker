@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const transactions = await response.json();
-      console.log("Fetched Transactions for Client-Side Aggregation:", transactions);
+      console.log("Fetched Transactions:", transactions);
       return transactions;
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -60,18 +60,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const todayTransactions = filteredTransactions.filter(tx => {
       const txDate = new Date(tx.date);
-      return txDate >= todayStart && txDate < todayEnd;
+      return txDate >= todayStart && txDate < todayEnd && tx.category !== "Salary";
     });
     console.log("Today's Transactions:", todayTransactions);
 
     const todaysTotalExpense = todayTransactions.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
 
     const prevDayExpenses = filteredTransactions
-      .filter(tx => new Date(tx.date) >= prevDayStart && new Date(tx.date) < prevDayEnd)
+      .filter(tx => new Date(tx.date) >= prevDayStart && new Date(tx.date) < prevDayEnd && tx.category !== "Salary")
       .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
 
     const totalMonthlyExpense = filteredTransactions
-      .filter(tx => new Date(tx.date) >= monthStart && new Date(tx.date) <= monthEnd)
+      .filter(tx => new Date(tx.date) >= monthStart && new Date(tx.date) <= monthEnd && tx.category !== "Salary")
+      .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
+
+    const totalIncome = filteredTransactions
+      .filter(tx => new Date(tx.date) >= monthStart && new Date(tx.date) <= monthEnd && tx.category === "Salary")
       .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
 
     const dailyExpenses = todayTransactions
@@ -87,30 +91,34 @@ document.addEventListener("DOMContentLoaded", function () {
       }, [])
       .sort((a, b) => a.time.localeCompare(b.time));
 
-    const weekly = filteredTransactions.reduce((acc, tx) => {
-      const date = new Date(tx.date);
-      const year = date.getFullYear();
-      const week = Math.floor((date.getDate() + 6 - date.getDay()) / 7) + 1;
-      const key = `Week ${week} ${year}`;
-      acc[key] = (acc[key] || { week: key, expenses: 0 });
-      acc[key].expenses += parseFloat(tx.amount || 0);
-      return acc;
-    }, {});
+    const weekly = filteredTransactions
+      .filter(tx => tx.category !== "Salary")
+      .reduce((acc, tx) => {
+        const date = new Date(tx.date);
+        const year = date.getFullYear();
+        const week = Math.floor((date.getDate() + 6 - date.getDay()) / 7) + 1;
+        const key = `Week ${week} ${year}`;
+        acc[key] = (acc[key] || { week: key, expenses: 0 });
+        acc[key].expenses += parseFloat(tx.amount || 0);
+        return acc;
+      }, {});
     const weeklyArray = Object.values(weekly).sort((a, b) => a.week.localeCompare(b.week));
 
-    const monthly = filteredTransactions.reduce((acc, tx) => {
-      const month = new Date(tx.date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
-      acc[month] = (acc[month] || { month, expenses: 0 });
-      acc[month].expenses += parseFloat(tx.amount || 0);
-      return acc;
-    }, {});
+    const monthly = filteredTransactions
+      .filter(tx => tx.category !== "Salary")
+      .reduce((acc, tx) => {
+        const month = new Date(tx.date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+        acc[month] = (acc[month] || { month, expenses: 0 });
+        acc[month].expenses += parseFloat(tx.amount || 0);
+        return acc;
+      }, {});
     const monthlyArray = Object.values(monthly).sort((a, b) => new Date(a.month) - new Date(b.month));
 
     const yearStart = new Date(today.getFullYear(), 0, 1);
     const yearEnd = new Date(today.getFullYear() + 1, 0, 0);
-    const yearlyTransactions = transactions.filter(tx => {
+    const yearlyTransactions = filteredTransactions.filter(tx => {
       const txDate = new Date(tx.date);
-      return txDate >= yearStart && txDate <= yearEnd;
+      return txDate >= yearStart && txDate <= yearEnd && tx.category !== "Salary";
     });
     const yearly = yearlyTransactions.reduce((acc, tx) => {
       const year = new Date(tx.date).getFullYear().toString();
@@ -163,7 +171,10 @@ document.addEventListener("DOMContentLoaded", function () {
       prevDayExpenses,
       todaysTotalExpense,
       totalMonthlyExpense,
-      totalExpenses: filteredTransactions.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0)
+      totalIncome,
+      totalExpenses: filteredTransactions
+        .filter(tx => tx.category !== "Salary")
+        .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0)
     };
   }
 
@@ -184,6 +195,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const report = {
         month: prevMonthStart.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
         totalExpenses: aggregatedData.totalExpenses,
+        totalIncome: aggregatedData.totalIncome,
         categories: aggregatedData.categories,
         budgetComparison: budgets.map(budget => ({
           category: budget.name,
@@ -200,7 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
             transactionId: tx.transactionId,
             date: new Date(tx.date).toLocaleDateString('en-IN'),
             time: new Date(tx.date).toLocaleTimeString('en-IN'),
-            category: tx.category,
+            category: tx.category || "Uncategorized",
             amount: parseFloat(tx.amount).toFixed(2)
           }))
       };
@@ -243,6 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const report = {
         month: prevMonthStart.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
         totalExpenses: data.totalExpenses,
+        totalIncome: data.totalIncome,
         categories: data.categories,
         budgetComparison: budgets.map(budget => ({
           category: budget.name,
@@ -264,8 +277,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function downloadReportAsCSV(report, filename) {
     let csvContent = `Month,${report.month}\n\n`;
-    csvContent += `Total Expenses,₹${report.totalExpenses.toLocaleString('en-IN')}\n\n`;
-    csvContent += `Total Income,₹${(report.totalIncome || 0).toLocaleString('en-IN')}\n\n`;
+    csvContent += `Total Income,₹${(report.totalIncome || 0).toLocaleString('en-IN')}\n`;
+    csvContent += `Total Expenses,₹${(report.totalExpenses || 0).toLocaleString('en-IN')}\n\n`;
     csvContent += "Category Expenses\n";
     csvContent += "Category,Amount (₹)\n";
     report.categories.forEach(cat => {
@@ -371,8 +384,8 @@ document.addEventListener("DOMContentLoaded", function () {
       ? `₹${parseFloat(data.totalMonthlyExpense || 0).toLocaleString('en-IN')}`
       : "₹0";
     elements.totalIncome.textContent = data.totalIncome !== undefined
-  ? `₹${parseFloat(data.totalIncome || 0).toLocaleString('en-IN')}`
-  : "₹0";
+      ? `₹${parseFloat(data.totalIncome || 0).toLocaleString('en-IN')}`
+      : "₹0";
   }
 
   function initializeCharts(data) {
@@ -654,14 +667,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
   window.openDownloadPopup = function() {
     const popup = document.getElementById("downloadPopup");
-    popup.style.display = "block";
+    popup.classList.add("active");
     document.getElementById("backdrop").classList.add("active");
     populateMonthSelect();
   };
 
   window.closeDownloadPopup = function() {
     const popup = document.getElementById("downloadPopup");
-    popup.style.display = "none";
+    popup.classList.remove("active");
     document.getElementById("backdrop").classList.remove("active");
   };
 
@@ -674,84 +687,89 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       showLoader();
-      const fromDate = month + "-01";
-      const toDate = new Date(month + "-01");
+      const fromDate = `${month}-01`;
+      const toDate = new Date(month);
       toDate.setMonth(toDate.getMonth() + 1);
       toDate.setDate(0);
-      toDate = toDate.toISOString().slice(0, 10);
+      toDate.setUTCHours(23, 59, 59, 999);
+      const toDateStr = toDate.toISOString().slice(0, 10);
 
-      if (month === new Date().toISOString().slice(0, 7)) {
-        const response = await fetch(
-          `http://localhost:5000/api/reports/summary?from=${fromDate}&to=${toDate}&_=${Date.now()}`,
+      console.log(`Downloading ${format} report for ${month} (from ${fromDate} to ${toDateStr})`);
+
+      const response = await fetch(
+        `http://localhost:5000/api/reports/summary?from=${fromDate}&to=${toDateStr}&_=${Date.now()}`,
+        {
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store"
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Failed to fetch summary data: ${errorData.message || response.statusText}`);
+      }
+      const data = await response.json();
+
+      const budgets = await fetchBudgets(month);
+
+      const transactions = (await fetchTransactions())
+        .filter(tx => {
+          const txDate = new Date(tx.date);
+          return txDate >= new Date(fromDate) && txDate <= toDate;
+        })
+        .map(tx => ({
+          transactionId: tx.transactionId || 'N/A',
+          date: new Date(tx.date).toLocaleDateString('en-IN'),
+          time: new Date(tx.date).toLocaleTimeString('en-IN'),
+          category: tx.category || "Uncategorized",
+          amount: parseFloat(tx.amount || 0).toFixed(2)
+        }));
+
+      const report = {
+        month: new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+        totalExpenses: data.totalExpenses || 0,
+        totalIncome: data.totalIncome || 0,
+        categories: data.categories || [],
+        budgetComparison: budgets.map(budget => ({
+          category: budget.name || 'Unknown',
+          budgeted: budget.budget || 0,
+          spent: budget.spent || 0,
+          overBudget: (budget.spent || 0) > (budget.budget || 0) ? (budget.spent - budget.budget) : 0
+        })),
+        transactions
+      };
+
+      if (format === 'csv') {
+        downloadReportAsCSV(report, `report_${month}`);
+      } else if (format === 'pdf') {
+        const downloadResponse = await fetch(
+          `http://localhost:5000/api/reports/download?from=${fromDate}&to=${toDateStr}&format=pdf&_=${Date.now()}`,
           {
             headers: { "Content-Type": "application/json" },
             cache: "no-store"
           }
         );
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!downloadResponse.ok) {
+          const errorData = await downloadResponse.json().catch(() => ({}));
+          throw new Error(`Failed to download PDF: ${errorData.message || downloadResponse.statusText}`);
         }
-        const data = await response.json();
-        const budgets = await fetchBudgets(month);
-        const report = {
-          month: new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
-          totalExpenses: data.totalExpenses,
-          categories: data.categories,
-          budgetComparison: budgets.map(budget => ({
-            category: budget.name,
-            budgeted: budget.budget,
-            spent: budget.spent,
-            overBudget: budget.spent > budget.budget ? budget.spent - budget.budget : 0
-          }))
-        };
-        if (format === 'csv') {
-          downloadReportAsCSV(report, `report_${month}`);
-        } else {
-          const response = await fetch(
-            `http://localhost:5000/api/reports/download?from=${fromDate}&to=${toDate}&format=${format}&_=${Date.now()}`,
-            {
-              headers: { "Content-Type": "application/json" },
-              cache: "no-store"
-            }
-          );
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `report_${month}.${format}`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-        }
+        const blob = await downloadResponse.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `report_${month}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
       } else {
-        const report = await generatePreviousMonthReport();
-        if (!report) throw new Error("Failed to generate report");
-        if (format === 'csv') {
-          downloadReportAsCSV(report, `report_${month}`);
-        } else {
-          const response = await fetch(
-            `http://localhost:5000/api/reports/download?from=${fromDate}&to=${toDate}&format=${format}&_=${Date.now()}`,
-            {
-              headers: { "Content-Type": "application/json" },
-              cache: "no-store"
-            }
-          );
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `report_${month}.${format}`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-        }
+        throw new Error("Invalid format. Supported: csv, pdf");
       }
-      showInfoMessage(`Downloaded ${format.toUpperCase()} report for ${month} successfully!`);
+
+      showInfoMessage(`Downloaded ${format.toUpperCase()} report for ${report.month} successfully!`);
       closeDownloadPopup();
     } catch (error) {
-      showErrorMessage(`Failed to download report: ${error.message}`);
+      console.error("Download error:", error);
+      showErrorMessage(`Failed to download ${format.toUpperCase()} report: ${error.message}`);
     } finally {
       hideLoader();
     }
@@ -825,11 +843,10 @@ document.addEventListener("DOMContentLoaded", function () {
   window.addEventListener('transactionAdded', () => {
     if (window.location.pathname.includes('reports.html')) {
       console.log("Transaction added, refreshing reports...");
-      syncData();
+      loadData();
     }
   });
 
-  // Toggle Dark Mode
   window.toggleDarkMode = function () {
     document.body.classList.toggle('dark');
   };

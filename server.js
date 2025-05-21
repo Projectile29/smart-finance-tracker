@@ -789,19 +789,31 @@ app.get('/api/cash-flow/analysis', async (req, res) => {
 });
 
 // === Report Routes ===
+
+// Savings Trend Endpoint (unchanged, included for completeness)
 app.get('/api/savings-trend', async (req, res) => {
   try {
     const transactions = await Transaction.aggregate([
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
-          totalExpense: { $sum: "$amount" },
+          totalExpense: { 
+            $sum: { 
+              $cond: [{ $ne: ["$category", "Salary"] }, "$amount", 0] 
+            } 
+          },
+          totalIncome: { 
+            $sum: { 
+              $cond: [{ $eq: ["$category", "Salary"] }, "$amount", 0] 
+            } 
+          }
         },
       },
       {
         $project: {
           month: "$_id",
           totalExpense: 1,
+          totalIncome: 1,
           _id: 0,
         },
       },
@@ -814,6 +826,7 @@ app.get('/api/savings-trend', async (req, res) => {
   }
 });
 
+// Available Months Endpoint (unchanged)
 app.get('/api/reports/available-months', async (req, res) => {
   try {
     const months = await Transaction.aggregate([
@@ -837,6 +850,7 @@ app.get('/api/reports/available-months', async (req, res) => {
   }
 });
 
+// Reports Summary Endpoint
 app.get("/api/reports/summary", async (req, res) => {
   try {
     const { from, to } = req.query;
@@ -855,7 +869,7 @@ app.get("/api/reports/summary", async (req, res) => {
 
     const query = {
       date: { $gte: fromDate, $lte: toDate },
-      amount: { $ne: null } // Exclude invalid amounts
+      amount: { $ne: null }
     };
 
     const rawTransactions = await Transaction.find(query, { transactionId: 1, date: 1, category: 1, amount: 1 }).lean();
@@ -875,7 +889,8 @@ app.get("/api/reports/summary", async (req, res) => {
       {
         $match: {
           date: { $gte: todayStart, $lt: todayEnd },
-          amount: { $ne: null }
+          amount: { $ne: null },
+          category: { $ne: "Salary" }
         },
       },
       {
@@ -895,7 +910,7 @@ app.get("/api/reports/summary", async (req, res) => {
 
     const todayTransactions = rawTransactions.filter(tx => {
       const txDate = new Date(tx.date);
-      return txDate >= todayStart && txDate < todayEnd;
+      return txDate >= todayStart && txDate < todayEnd && tx.category !== "Salary";
     });
     console.log("Today's Filtered Transactions:", todayTransactions.length);
 
@@ -905,7 +920,8 @@ app.get("/api/reports/summary", async (req, res) => {
       {
         $match: {
           date: { $gte: monthStart, $lte: monthEnd },
-          amount: { $ne: null }
+          amount: { $ne: null },
+          category: { $ne: "Salary" }
         },
       },
       {
@@ -923,11 +939,35 @@ app.get("/api/reports/summary", async (req, res) => {
     ]).then(result => result[0]?.amount || 0);
     console.log("Total Monthly Expense:", totalMonthlyExpense);
 
+    const totalIncome = await Transaction.aggregate([
+      {
+        $match: {
+          date: { $gte: monthStart, $lte: monthEnd },
+          amount: { $ne: null },
+          category: "Salary"
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          amount: { $sum: "$amount" },
+        },
+      },
+      {
+        $project: {
+          amount: 1,
+          _id: 0,
+        },
+      },
+    ]).then(result => result[0]?.amount || 0);
+    console.log("Total Income:", totalIncome);
+
     const dailyExpenses = await Transaction.aggregate([
       {
         $match: {
           date: { $gte: todayStart, $lt: todayEnd },
-          amount: { $ne: null }
+          amount: { $ne: null },
+          category: { $ne: "Salary" }
         },
       },
       {
@@ -949,7 +989,8 @@ app.get("/api/reports/summary", async (req, res) => {
       {
         $match: {
           date: { $gte: prevDayStart, $lt: prevDayEnd },
-          amount: { $ne: null }
+          amount: { $ne: null },
+          category: { $ne: "Salary" }
         },
       },
       {
@@ -968,7 +1009,7 @@ app.get("/api/reports/summary", async (req, res) => {
     console.log("Previous Day Expenses:", prevDayExpenses);
 
     const weekly = await Transaction.aggregate([
-      { $match: query },
+      { $match: { ...query, category: { $ne: "Salary" } } },
       {
         $group: {
           _id: {
@@ -992,7 +1033,7 @@ app.get("/api/reports/summary", async (req, res) => {
     console.log("Weekly Data:", weekly);
 
     const monthly = await Transaction.aggregate([
-      { $match: query },
+      { $match: { ...query, category: { $ne: "Salary" } } },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
@@ -1024,15 +1065,16 @@ app.get("/api/reports/summary", async (req, res) => {
     ]);
     console.log("Monthly Data:", monthly);
 
-    // Fixed yearly aggregation to cover only 2025
-    const yearStart = new Date(2025, 0, 1); // January 1, 2025
-    const yearEnd = new Date(2025, 11, 31, 23, 59, 59, 999); // December 31, 2025
-    const yearlyQuery = {
-      date: { $gte: yearStart, $lte: yearEnd },
-      amount: { $ne: null }
-    };
+    const yearStart = new Date(2025, 0, 1);
+    const yearEnd = new Date(2025, 11, 31, 23, 59, 59, 999);
     const yearly = await Transaction.aggregate([
-      { $match: yearlyQuery },
+      { 
+        $match: { 
+          date: { $gte: yearStart, $lte: yearEnd }, 
+          amount: { $ne: null }, 
+          category: { $ne: "Salary" } 
+        } 
+      },
       {
         $group: {
           _id: { $year: "$date" },
@@ -1069,15 +1111,14 @@ app.get("/api/reports/summary", async (req, res) => {
     ]);
     console.log("Categories:", categories);
 
-    // Fixed previousMonthsByCategory to cover last 3 months (Feb-Apr 2025)
-    const prevMonthsStart = new Date(2025, 1, 1); // February 1, 2025
-    const prevMonthsEnd = new Date(2025, 3, 30, 23, 59, 59, 999); // April 30, 2025
+    const prevMonthsStart = new Date(2025, 1, 1);
+    const prevMonthsEnd = new Date(2025, 3, 30, 23, 59, 59, 999);
     const previousMonthsByCategory = await Transaction.aggregate([
       {
         $match: {
           date: { $gte: prevMonthsStart, $lte: prevMonthsEnd },
           amount: { $ne: null },
-          category: { $ne: null } // Exclude null categories
+          category: { $ne: null }
         },
       },
       {
@@ -1126,7 +1167,7 @@ app.get("/api/reports/summary", async (req, res) => {
     console.log("Previous Months by Category:", previousMonthsByCategory);
 
     const totalExpenses = await Transaction.aggregate([
-      { $match: query },
+      { $match: { ...query, category: { $ne: "Salary" } } },
       {
         $group: {
           _id: null,
@@ -1135,21 +1176,6 @@ app.get("/api/reports/summary", async (req, res) => {
       },
     ]).then(result => result[0]?.amount || 0);
     console.log("Total Expenses:", totalExpenses);
-
-const totalIncome = await Transaction.aggregate([
-  {
-    $match: {
-      ...query,
-      category: "Salary"
-    }
-  },
-  {
-    $group: {
-      _id: null,
-      amount: { $sum: "$amount" }
-    }
-  }
-]).then(result => result[0]?.amount || 0);
 
     const response = {
       dailyExpenses,
@@ -1161,8 +1187,8 @@ const totalIncome = await Transaction.aggregate([
       prevDayExpenses,
       todaysTotalExpense,
       totalMonthlyExpense,
-      totalExpenses,
-       totalIncome
+      totalIncome,
+      totalExpenses
     };
 
     res.json(response);
@@ -1172,6 +1198,7 @@ const totalIncome = await Transaction.aggregate([
   }
 });
 
+// Reports Download Endpoint
 app.get("/api/reports/download", async (req, res) => {
   try {
     const { from, to, format } = req.query;
@@ -1182,12 +1209,19 @@ app.get("/api/reports/download", async (req, res) => {
     const fromDate = new Date(from);
     const toDate = new Date(to);
     toDate.setUTCHours(23, 59, 59, 999);
+    if (isNaN(fromDate) || isNaN(toDate)) {
+      return res.status(400).json({ message: "Invalid date format" });
+    }
+
+    console.log(`Download request: from=${fromDate.toISOString()}, to=${toDate.toISOString()}, format=${format}`);
+
     const query = {
       date: { $gte: fromDate, $lte: toDate },
       amount: { $ne: null }
     };
 
-    const transactions = await Transaction.find(query).lean();
+    const transactions = await Transaction.find(query, { transactionId: 1, date: 1, category: 1, amount: 1 }).lean();
+    console.log(`Fetched ${transactions.length} transactions for download`);
 
     const categories = await Transaction.aggregate([
       { $match: query },
@@ -1203,10 +1237,14 @@ app.get("/api/reports/download", async (req, res) => {
           amount: 1,
           _id: 0
         }
-      }
+      },
+      { $sort: { amount: -1 } }
     ]);
+    console.log("Categories for download:", categories);
 
-    const totalExpenses = categories.reduce((sum, c) => sum + (c.category !== 'Salary' ? c.amount : 0), 0);
+    const totalExpenses = categories
+      .filter(c => c.category !== 'Salary')
+      .reduce((sum, c) => sum + (c.amount || 0), 0);
     const totalIncome = categories.find(c => c.category === 'Salary')?.amount || 0;
 
     const filename = `report_${fromDate.toISOString().slice(0, 10)}_to_${toDate.toISOString().slice(0, 10)}.${format}`;
@@ -1221,10 +1259,10 @@ app.get("/api/reports/download", async (req, res) => {
 
       let csv = csvStringifier.getHeaderString();
       csv += csvStringifier.stringifyRecords([
-        { field: 'From Date', value: from },
-        { field: 'To Date', value: to },
-        { field: 'Total Income', value: `₹${totalIncome}` },
-        { field: 'Total Expenses', value: `₹${totalExpenses}` }
+        { field: 'From Date', value: fromDate.toLocaleDateString('en-IN') },
+        { field: 'To Date', value: toDate.toLocaleDateString('en-IN') },
+        { field: 'Total Income', value: `₹${totalIncome.toLocaleString('en-IN')}` },
+        { field: 'Total Expenses', value: `₹${totalExpenses.toLocaleString('en-IN')}` }
       ]);
       csv += '\nCategory Breakdown\n';
       csv += createObjectCsvStringifier({
@@ -1232,7 +1270,10 @@ app.get("/api/reports/download", async (req, res) => {
           { id: 'category', title: 'Category' },
           { id: 'amount', title: 'Amount (₹)' }
         ]
-      }).stringifyRecords(categories);
+      }).stringifyRecords(categories.map(c => ({
+        category: c.category,
+        amount: (c.amount || 0).toLocaleString('en-IN')
+      })));
 
       csv += '\nTransactions\n';
       csv += createObjectCsvStringifier({
@@ -1244,10 +1285,10 @@ app.get("/api/reports/download", async (req, res) => {
         ]
       }).stringifyRecords(
         transactions.map(tx => ({
-          transactionId: tx.transactionId,
+          transactionId: tx.transactionId || 'N/A',
           date: new Date(tx.date).toLocaleDateString('en-IN'),
           category: tx.category || "Uncategorized",
-          amount: tx.amount
+          amount: (tx.amount || 0).toLocaleString('en-IN')
         }))
       );
 
@@ -1257,39 +1298,69 @@ app.get("/api/reports/download", async (req, res) => {
     }
 
     if (format === 'pdf') {
-      const doc = new PDFDocument();
-      res.setHeader('Content-disposition', `attachment; filename=${filename}`);
-      res.setHeader('Content-Type', 'application/pdf');
-      doc.pipe(res);
+      if (!PDFDocument) {
+        console.error("PDFDocument is not available. Ensure pdfkit is installed.");
+        return res.status(500).json({ message: "PDF generation is not available. Please ensure pdfkit is installed." });
+      }
 
-      doc.fontSize(20).text('Finance Report', { align: 'center' });
-      doc.moveDown().fontSize(12).text(`From: ${fromDate.toLocaleDateString()}`);
-      doc.text(`To: ${toDate.toLocaleDateString()}`);
-      doc.text(`Total Income: ₹${totalIncome.toLocaleString('en-IN')}`);
-      doc.text(`Total Expenses: ₹${totalExpenses.toLocaleString('en-IN')}`);
-      doc.moveDown().fontSize(14).text('Category Breakdown:');
+      try {
+        const doc = new PDFDocument({ margin: 50 });
+        res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+        res.setHeader('Content-Type', 'application/pdf');
 
-      categories.forEach(c => {
-        doc.fontSize(12).text(`• ${c.category}: ₹${c.amount.toLocaleString('en-IN')}`);
-      });
+        // Handle response errors during streaming
+        res.on('error', (err) => {
+          console.error("Response stream error:", err);
+          if (!res.headersSent) {
+            res.status(500).json({ message: `Stream error: ${err.message}` });
+          }
+        });
 
-      doc.addPage().fontSize(14).text('Transactions:');
-      transactions.forEach(tx => {
-        doc.fontSize(10).text(
-          `${tx.transactionId || 'N/A'} | ${new Date(tx.date).toLocaleDateString()} | ${tx.category || 'Uncategorized'} | ₹${tx.amount}`
-        );
-      });
+        doc.pipe(res);
 
-      doc.end();
+        doc.fontSize(20).text('Finance Report', { align: 'center' });
+        doc.moveDown(1);
+        doc.fontSize(12).text(`From: ${fromDate.toLocaleDateString('en-IN')}`);
+        doc.text(`To: ${toDate.toLocaleDateString('en-IN')}`);
+        doc.text(`Total Income: ₹${totalIncome.toLocaleString('en-IN')}`);
+        doc.text(`Total Expenses: ₹${totalExpenses.toLocaleString('en-IN')}`);
+        doc.moveDown(1);
+        doc.fontSize(14).text('Category Breakdown:');
+
+        categories.forEach(c => {
+          doc.fontSize(12).text(`• ${c.category}: ₹${(c.amount || 0).toLocaleString('en-IN')}`);
+        });
+
+        if (transactions.length > 0) {
+          doc.addPage().fontSize(14).text('Transactions:');
+          transactions.forEach(tx => {
+            doc.fontSize(10).text(
+              `${tx.transactionId || 'N/A'} | ${new Date(tx.date).toLocaleDateString('en-IN')} | ${tx.category || 'Uncategorized'} | ₹${(tx.amount || 0).toLocaleString('en-IN')}`
+            );
+          });
+        } else {
+          doc.addPage().fontSize(12).text('No transactions found for the selected period.');
+        }
+
+        doc.end();
+      } catch (pdfError) {
+        console.error("PDF generation error:", pdfError);
+        if (!res.headersSent) {
+          return res.status(500).json({ message: `Failed to generate PDF: ${pdfError.message}` });
+        }
+      }
       return;
     }
 
-    res.status(400).json({ message: "Invalid format. Supported: csv, pdf" });
+    return res.status(400).json({ message: "Invalid format. Supported: csv, pdf" });
   } catch (error) {
-    console.error("Download error:", error);
-    res.status(500).json({ message: `Server error: ${error.message}` });
+    console.error("Download endpoint error:", error);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: `Server error: ${error.message}` });
+    }
   }
 });
+
 
 
 // === Projection Routes ===

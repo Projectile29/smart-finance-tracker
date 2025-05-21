@@ -43,7 +43,7 @@
           <p id="total-monthly-expense">₹0</p>
         </div>
         <div class="card">
-          <h3>Total Income</h3>
+          <h3>Total Monthly Income</h3>
           <p id="total-income">₹0</p>
         </div>
       </div>
@@ -76,22 +76,21 @@
       </div>
 
       <div class="sync-button">
-        <button onclick="syncData()"><i class="fas fa-arrows-rotate"></i> Sync Data</button>
+        <button onclick="loadData()"><i class="fas fa-arrows-rotate"></i> Sync Data</button>
       </div>
 
       <div class="download-buttons">
         <button onclick="openDownloadPopup()">Download Reports</button>
       </div>
 
-      <div class="notification-panel" id="notificationPanel">
+      <div id="notificationPanel" class="notification-panel">
         <h3>Notifications</h3>
         <ul id="notificationList"></ul>
         <button onclick="clearNotifications()">Clear Notifications</button>
       </div>
 
-      <div class="backdrop" id="backdrop"></div>
-
-      <div class="download-popup" id="downloadPopup">
+      <div id="backdrop" class="backdrop"></div>
+      <div id="downloadPopup" class="download-popup">
         <div class="popup-content">
           <h3>Select Month to Download</h3>
           <select id="monthSelect">
