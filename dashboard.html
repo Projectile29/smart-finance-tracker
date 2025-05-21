@@ -26,7 +26,6 @@
     <header>
       <h1>Dashboard</h1>
       <div class="header-actions">
-        <!-- Removed dark mode toggle -->
         <button class="icon-btn" onclick="toggleNotifications()"><i class="fas fa-bell"></i></button>
         <a href="./profile.html" class="icon-btn"><i class="fas fa-user-circle"></i></a>
         <button class="logout-btn">Logout</button>
@@ -35,12 +34,19 @@
 
     <section class="dashboard">
       <div class="card" id="total-expenses-card">This Month's Outflow<br>Loading...</div>
-      <div class="card" id="savings-overview-card">Savings Overview<br>₹50,000</div>
-      <div class="card" id="remaining-budget-card">Remaining Budget<br>₹<span id="remaining-budget">Loading...</span></div>
-      <div class="card goal-card">
-        Income Goal<br />
+      <div class="card" id="savings-progress-card">
+        Monthly Savings Progress<br>
+        ₹<span id="savings-amount">Loading...</span>
         <div class="progress-bar">
-          <div class="progress" style="width: 67%;"></div>
+          <div id="savings-progress-bar" class="progress"></div>
+        </div>
+      </div>
+      <div class="card" id="remaining-budget-card">Remaining Budget<br>₹<span id="remaining-budget">Loading...</span></div>
+      <div class="card goal-card" id="expense-reduction-card">
+        Expense Reduction Target<br>
+        ₹<span id="expense-reduction-amount">Loading...</span>
+        <div class="progress-bar">
+          <div id="expense-reduction-progress-bar" class="progress"></div>
         </div>
       </div>
       <div class="card" id="income-card">Monthly Earnings<br>₹<span id="income-amount">Loading...</span></div>
@@ -56,7 +62,5 @@
     <ul id="notificationList"></ul>
     <button onclick="clearNotifications()">Clear All</button>
   </div>
-
-  <!-- Removed dark mode script -->
 </body>
 </html>

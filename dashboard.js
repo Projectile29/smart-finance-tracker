@@ -7,8 +7,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const totalExpensesCard = document.getElementById("total-expenses-card");
-    const incomeCard = document.getElementById("income-card");
+    const savingsProgressCard = document.getElementById("savings-progress-card");
     const remainingBudgetCard = document.getElementById("remaining-budget-card");
+    const expenseReductionCard = document.getElementById("expense-reduction-card");
+    const incomeCard = document.getElementById("income-card");
     const spendingChartCanvas = document.getElementById("spendingChart");
 
     const spendingChart = new Chart(spendingChartCanvas, {
@@ -68,7 +70,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             });
 
-            // Sort months (by date) and get last 5
             const sortedMonths = Object.keys(monthlySpending).sort((a, b) => {
                 const [monthA, yearA] = a.split(' ');
                 const [monthB, yearB] = b.split(' ');
@@ -84,9 +85,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             spendingChart.data.datasets[0].data = spendingData;
             spendingChart.update();
 
+            return totalExpenses;
         } catch (error) {
             console.error("Error fetching expenses:", error);
             if (totalExpensesCard) totalExpensesCard.innerHTML = "Total Expenses<br>Error loading data";
+            return 0;
         }
     }
 
@@ -117,9 +120,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (incomeCard) {
                 incomeCard.innerHTML = `Monthly Earnings<br>₹${totalSalary.toFixed(2)}`;
             }
+            return totalSalary;
         } catch (error) {
             console.error("Error fetching salary data:", error);
             if (incomeCard) incomeCard.innerHTML = "Income<br>Error loading data";
+            return 0;
         }
     }
 
@@ -145,23 +150,65 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (remainingBudgetCard) {
                 remainingBudgetCard.innerHTML = `Remaining Budget<br>₹${remaining.toFixed(2)}`;
             }
+            return { totalBudget, totalSpent, remaining };
         } catch (error) {
             console.error("Error fetching remaining budget:", error);
             if (remainingBudgetCard) remainingBudgetCard.innerHTML = "Remaining Budget<br>Error loading data";
+            return { totalBudget: 0, totalSpent: 0, remaining: 0 };
+        }
+    }
+
+    async function updateSavingsProgress(totalSalary, totalExpenses) {
+        try {
+            const savingsGoal = totalSalary * 0.1; // 10% of income as savings goal
+            const monthlySavings = totalSalary - totalExpenses; // Can be negative
+            const savingsProgress = savingsGoal > 0 ? (monthlySavings / savingsGoal) * 100 : 0;
+
+            if (savingsProgressCard) {
+                savingsProgressCard.innerHTML = `Monthly Savings Progress<br>₹${monthlySavings.toFixed(2)}<div class="progress-bar"><div id="savings-progress-bar" class="progress"></div></div>`;
+                const progressBar = document.getElementById("savings-progress-bar");
+                progressBar.style.width = `${Math.min(Math.abs(savingsProgress), 100)}%`;
+                if (monthlySavings < 0) {
+                    progressBar.classList.add("negative");
+                }
+            }
+        } catch (error) {
+            console.error("Error updating savings progress:", error);
+            if (savingsProgressCard) savingsProgressCard.innerHTML = "Monthly Savings Progress<br>Error loading data";
+        }
+    }
+
+    async function updateExpenseReduction(totalSalary, totalExpenses, totalBudget) {
+        try {
+            const overspending = totalExpenses - totalSalary;
+            const reductionTarget = overspending > 0 ? overspending : 0;
+            const budgetRoom = totalBudget - totalExpenses;
+            const reductionProgress = reductionTarget > 0 ? Math.max((budgetRoom / reductionTarget) * 100, 0) : 100;
+
+            if (expenseReductionCard) {
+                expenseReductionCard.innerHTML = `Expense Reduction Target<br>₹${reductionTarget.toFixed(2)}<div class="progress-bar"><div id="expense-reduction-progress-bar" class="progress"></div></div>`;
+                const progressBar = document.getElementById("expense-reduction-progress-bar");
+                progressBar.style.width = `${Math.min(reductionProgress, 100)}%`;
+            }
+        } catch (error) {
+            console.error("Error updating expense reduction:", error);
+            if (expenseReductionCard) expenseReductionCard.innerHTML = "Expense Reduction Target<br>Error loading data";
         }
     }
 
     try {
-        await Promise.all([
+        const [totalExpenses, totalSalary, budgetData] = await Promise.all([
             fetchAndUpdateExpenses(),
             fetchAndUpdateSalary(),
             fetchRemainingBudget()
         ]);
+        await Promise.all([
+            updateSavingsProgress(totalSalary, totalExpenses),
+            updateExpenseReduction(totalSalary, totalExpenses, budgetData.totalBudget)
+        ]);
     } catch (error) {
         console.error("Error fetching dashboard data:", error);
     }
-
-    // Notification & logout code unchanged below (keep as is)
 
     function addNotification(message) {
         const notificationList = document.getElementById('notificationList');

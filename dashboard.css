@@ -134,17 +134,30 @@ header h1 {
   font-weight: 600;
 }
 
-.goal-card .progress-bar {
+.progress-bar {
   width: 100%;
   background: #e5e7eb;
   height: 12px;
   border-radius: 10px;
   overflow: hidden;
+  margin-top: 10px;
 }
 
-.goal-card .progress {
+.progress {
   height: 100%;
-  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+#savings-progress-bar {
+  background-color: #4caf50; /* Green for positive savings */
+}
+
+#savings-progress-bar.negative {
+  background-color: #f44336; /* Red for negative savings */
+}
+
+#expense-reduction-progress-bar {
+  background-color: var(--primary); /* Use primary color for consistency */
 }
 
 .chart-card {
