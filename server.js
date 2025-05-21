@@ -1198,6 +1198,15 @@ app.get("/api/reports/summary", async (req, res) => {
   }
 });
 
+let PDFDocument;
+try {
+  PDFDocument = require('pdfkit');
+  console.log("pdfkit module loaded successfully");
+} catch (error) {
+  console.error("Failed to load pdfkit module:", error.message);
+  PDFDocument = null; // Set to null to handle gracefully
+}
+
 // Reports Download Endpoint
 app.get("/api/reports/download", async (req, res) => {
   try {
