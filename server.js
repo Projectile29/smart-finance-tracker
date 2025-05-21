@@ -642,25 +642,66 @@ app.post('/api/cash-flow/generate-predictions', async (req, res) => {
   try {
     console.log('Handling /api/cash-flow/generate-predictions');
     const transactions = await Transaction.find({}).sort({ transactionId: 1 });
+
     if (!transactions.length) {
       return res.status(400).json({ error: 'No transactions available for prediction' });
     }
-    console.log('Creating CashFlowPredictor instance');
+
     const predictor = new CashFlowPredictor(transactions);
-    console.log('Generating predictions');
-    const result = await predictor.generatePredictions();
-    res.status(200).json({ 
+    const today = new Date();
+    const currentMonthStr = today.toISOString().slice(0, 7);
+
+    // === STEP 1: Regenerate missing past predictions ===
+    const pastMonths = [...new Set(transactions.map(tx => new Date(tx.date).toISOString().slice(0, 7)))]
+      .filter(month => month < currentMonthStr)
+      .sort();
+
+    const existingPredictions = await CashFlowPrediction.find({});
+    const existingMonthsSet = new Set(existingPredictions.map(p => p.month));
+
+    const missingPastMonths = pastMonths.filter(m => !existingMonthsSet.has(m));
+    const regeneratedPastPredictions = [];
+
+    for (const month of missingPastMonths) {
+      const pastDate = new Date(month + '-01');
+      const prediction = predictor.calculateFuturePredictions(pastDate, transactions, 1)[0];
+      prediction.month = month;
+      regeneratedPastPredictions.push(prediction);
+    }
+
+    if (regeneratedPastPredictions.length > 0) {
+      await CashFlowPrediction.insertMany(regeneratedPastPredictions, { ordered: false });
+    }
+
+    // === STEP 2: Generate predictions for current and next month ===
+    const currentDate = new Date();
+    currentDate.setDate(1);
+    const nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(currentDate.getMonth() + 1);
+
+    const futurePredictions = predictor.calculateFuturePredictions(currentDate, transactions, 2); // current + next month
+    const futureMonths = futurePredictions.map(p => p.month);
+
+    // Remove any existing future predictions for those months
+    await CashFlowPrediction.deleteMany({ month: { $in: futureMonths, $gte: currentMonthStr } });
+
+    // Save new predictions
+    await CashFlowPrediction.insertMany(futurePredictions, { ordered: false });
+
+    res.status(200).json({
       message: 'Cash flow predictions generated successfully',
-      predictions: result.predictions
+      predictions: futurePredictions
     });
+
   } catch (error) {
     console.error('Error generating cash flow predictions:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to generate predictions',
       message: error.message
     });
   }
 });
+
 
 app.get('/api/cash-flow/predictions', async (req, res) => {
   try {
@@ -1095,6 +1136,21 @@ app.get("/api/reports/summary", async (req, res) => {
     ]).then(result => result[0]?.amount || 0);
     console.log("Total Expenses:", totalExpenses);
 
+const totalIncome = await Transaction.aggregate([
+  {
+    $match: {
+      ...query,
+      category: "Salary"
+    }
+  },
+  {
+    $group: {
+      _id: null,
+      amount: { $sum: "$amount" }
+    }
+  }
+]).then(result => result[0]?.amount || 0);
+
     const response = {
       dailyExpenses,
       weekly,
@@ -1105,7 +1161,8 @@ app.get("/api/reports/summary", async (req, res) => {
       prevDayExpenses,
       todaysTotalExpense,
       totalMonthlyExpense,
-      totalExpenses
+      totalExpenses,
+       totalIncome
     };
 
     res.json(response);
@@ -1114,6 +1171,126 @@ app.get("/api/reports/summary", async (req, res) => {
     res.status(500).json({ message: `Server error: ${error.message}` });
   }
 });
+
+app.get("/api/reports/download", async (req, res) => {
+  try {
+    const { from, to, format } = req.query;
+    if (!from || !to || !format) {
+      return res.status(400).json({ message: "From, to, and format are required" });
+    }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    toDate.setUTCHours(23, 59, 59, 999);
+    const query = {
+      date: { $gte: fromDate, $lte: toDate },
+      amount: { $ne: null }
+    };
+
+    const transactions = await Transaction.find(query).lean();
+
+    const categories = await Transaction.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: { $ifNull: ["$category", "Uncategorized"] },
+          amount: { $sum: "$amount" }
+        }
+      },
+      {
+        $project: {
+          category: "$_id",
+          amount: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    const totalExpenses = categories.reduce((sum, c) => sum + (c.category !== 'Salary' ? c.amount : 0), 0);
+    const totalIncome = categories.find(c => c.category === 'Salary')?.amount || 0;
+
+    const filename = `report_${fromDate.toISOString().slice(0, 10)}_to_${toDate.toISOString().slice(0, 10)}.${format}`;
+
+    if (format === 'csv') {
+      const csvStringifier = createObjectCsvStringifier({
+        header: [
+          { id: 'field', title: 'Field' },
+          { id: 'value', title: 'Value' }
+        ]
+      });
+
+      let csv = csvStringifier.getHeaderString();
+      csv += csvStringifier.stringifyRecords([
+        { field: 'From Date', value: from },
+        { field: 'To Date', value: to },
+        { field: 'Total Income', value: `₹${totalIncome}` },
+        { field: 'Total Expenses', value: `₹${totalExpenses}` }
+      ]);
+      csv += '\nCategory Breakdown\n';
+      csv += createObjectCsvStringifier({
+        header: [
+          { id: 'category', title: 'Category' },
+          { id: 'amount', title: 'Amount (₹)' }
+        ]
+      }).stringifyRecords(categories);
+
+      csv += '\nTransactions\n';
+      csv += createObjectCsvStringifier({
+        header: [
+          { id: 'transactionId', title: 'Transaction ID' },
+          { id: 'date', title: 'Date' },
+          { id: 'category', title: 'Category' },
+          { id: 'amount', title: 'Amount (₹)' }
+        ]
+      }).stringifyRecords(
+        transactions.map(tx => ({
+          transactionId: tx.transactionId,
+          date: new Date(tx.date).toLocaleDateString('en-IN'),
+          category: tx.category || "Uncategorized",
+          amount: tx.amount
+        }))
+      );
+
+      res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+      res.setHeader('Content-Type', 'text/csv');
+      return res.send(csv);
+    }
+
+    if (format === 'pdf') {
+      const doc = new PDFDocument();
+      res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+      res.setHeader('Content-Type', 'application/pdf');
+      doc.pipe(res);
+
+      doc.fontSize(20).text('Finance Report', { align: 'center' });
+      doc.moveDown().fontSize(12).text(`From: ${fromDate.toLocaleDateString()}`);
+      doc.text(`To: ${toDate.toLocaleDateString()}`);
+      doc.text(`Total Income: ₹${totalIncome.toLocaleString('en-IN')}`);
+      doc.text(`Total Expenses: ₹${totalExpenses.toLocaleString('en-IN')}`);
+      doc.moveDown().fontSize(14).text('Category Breakdown:');
+
+      categories.forEach(c => {
+        doc.fontSize(12).text(`• ${c.category}: ₹${c.amount.toLocaleString('en-IN')}`);
+      });
+
+      doc.addPage().fontSize(14).text('Transactions:');
+      transactions.forEach(tx => {
+        doc.fontSize(10).text(
+          `${tx.transactionId || 'N/A'} | ${new Date(tx.date).toLocaleDateString()} | ${tx.category || 'Uncategorized'} | ₹${tx.amount}`
+        );
+      });
+
+      doc.end();
+      return;
+    }
+
+    res.status(400).json({ message: "Invalid format. Supported: csv, pdf" });
+  } catch (error) {
+    console.error("Download error:", error);
+    res.status(500).json({ message: `Server error: ${error.message}` });
+  }
+});
+
 
 // === Projection Routes ===
 app.get('/api/projections', async (req, res) => {

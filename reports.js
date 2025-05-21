@@ -265,6 +265,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function downloadReportAsCSV(report, filename) {
     let csvContent = `Month,${report.month}\n\n`;
     csvContent += `Total Expenses,₹${report.totalExpenses.toLocaleString('en-IN')}\n\n`;
+    csvContent += `Total Income,₹${(report.totalIncome || 0).toLocaleString('en-IN')}\n\n`;
     csvContent += "Category Expenses\n";
     csvContent += "Category,Amount (₹)\n";
     report.categories.forEach(cat => {
@@ -369,7 +370,9 @@ document.addEventListener("DOMContentLoaded", function () {
     elements.totalMonthly.textContent = data.totalMonthlyExpense !== undefined
       ? `₹${parseFloat(data.totalMonthlyExpense || 0).toLocaleString('en-IN')}`
       : "₹0";
-    elements.totalIncome.textContent = "₹0";
+    elements.totalIncome.textContent = data.totalIncome !== undefined
+  ? `₹${parseFloat(data.totalIncome || 0).toLocaleString('en-IN')}`
+  : "₹0";
   }
 
   function initializeCharts(data) {
