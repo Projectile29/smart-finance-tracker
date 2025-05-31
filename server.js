@@ -262,38 +262,6 @@ const transactionSchema = new mongoose.Schema({
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
-// Get Monthly Savings Trend
-app.get('/api/savings-trend', async (req, res) => {
-  try {
-      const transactions = await Transaction.aggregate([
-          {
-              $group: {
-                  _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
-                  totalIncome: {
-                      $sum: { $cond: [{ $eq: ["$type", "Income"] }, "$amount", 0] }
-                  },
-                  totalExpense: {
-                      $sum: { $cond: [{ $eq: ["$type", "Expense"] }, "$amount", 0] }
-                  },
-                  netSavings: {
-                      $sum: {
-                          $cond: [
-                              { $eq: ["$type", "Income"] },
-                              "$amount",
-                              { $multiply: ["$amount", -1] }
-                          ]
-                      }
-                  }
-              }
-          },
-          { $sort: { "_id": 1 } }
-      ]);
-      res.json(transactions);
-  } catch (error) {
-      res.status(500).json({ error: 'Error fetching savings trend' });
-  }
-});
-
 app.get("/transactions", async (req, res) => {
   try {
     const transactions = await Transaction.find().lean();
