@@ -365,14 +365,12 @@ function editGoalById(goalId) {
         return;
     }
     const goals = JSON.parse(localStorage.getItem('goals')) || [];
-    console.log('Goals in localStorage:', goals);
     const goal = goals.find(g => g.id === goalId || g._id === goalId);
-    
     if (goal) {
         console.log('Found goal:', goal);
         openEditGoalModal(goal);
     } else {
-        console.log('Goal not found for ID:', goalId);
+        console.error('Goal not found for ID:', goalId);
         addNotification("Goal not found.");
     }
 }
@@ -470,78 +468,96 @@ async function saveGoal() {
 }
 
 async function saveEditedGoal() {
-    console.log("Starting saveEditedGoal");
-    const id = document.getElementById('editGoalId').value;
-    const name = document.getElementById('editGoalName').value.trim();
-    const category = document.getElementById('editGoalCategory').value;
-    const targetAmount = parseFloat(document.getElementById('editTargetAmount').value);
-    const currentSavings = parseFloat(document.getElementById('editCurrentSavings').value);
-    const targetDate = document.getElementById('editTargetDate').value;
-    
-    console.log('Saving edited goal:', { id, name, category, targetAmount, currentSavings, targetDate });
-    
-    if (!name || isNaN(targetAmount) || isNaN(currentSavings)) {
-        addNotification("Please fill in all required fields.");
-        console.log("Validation failed: Missing required fields");
-        return;
-    }
-    
-    const updatedGoal = {
-        id,
-        _id: id, // Ensure _id is included for API compatibility
-        name,
-        category,
-        targetAmount,
-        currentSavings,
-        targetDate: targetDate || null,
-        updatedAt: new Date().toISOString()
-    };
-    
+  console.log("Starting saveEditedGoal");
+  const id = document.getElementById('editGoalId').value;
+  const name = document.getElementById('editGoalName').value.trim();
+  const category = document.getElementById('editGoalCategory').value || 'other';
+  const targetAmount = parseFloat(document.getElementById('editTargetAmount').value);
+  const currentSavings = parseFloat(document.getElementById('editCurrentSavings').value);
+  const targetDate = document.getElementById('editTargetDate').value || null;
+
+  console.log('Saving edited goal:', { id, name, category, targetAmount, currentSavings, targetDate });
+
+  if (!id || !name || isNaN(targetAmount) || isNaN(currentSavings)) {
+    addNotification("Please fill in all required fields.");
+    console.error("Validation failed: Missing required fields or invalid ID");
+    return;
+  }
+
+  const updatedGoal = {
+    id,
+    _id: id,
+    name,
+    category,
+    targetAmount,
+    currentSavings,
+    targetDate,
+    updatedAt: new Date().toISOString()
+  };
+
+  try {
+    // Try API update
     try {
-        // Skip API call to ensure editing works with localStorage
-        /*
-        try {
-            const response = await fetch(`${API_BASE_URL}/goals/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedGoal)
-            });
-            
-            if (response.ok) {
-                updateLocalGoal(updatedGoal);
-                addNotification(`Goal "${name}" updated successfully!`);
-                closeAllModals();
-                loadGoals();
-                return;
-            }
-        } catch (error) {
-            console.warn("API not available, updating local storage only.", error);
-        }
-        */
-        
-        // Fallback to local storage
-        const goals = JSON.parse(localStorage.getItem('goals')) || [];
-        console.log('Goals before update:', goals);
-        const goalIndex = goals.findIndex(g => g.id === id || g._id === id);
-        
-        if (goalIndex !== -1) {
-            // Preserve created date
-            updatedGoal.createdAt = goals[goalIndex].createdAt;
-            goals[goalIndex] = updatedGoal;
-            localStorage.setItem('goals', JSON.stringify(goals));
-            console.log('Goals after update:', goals);
-            
-            addNotification(`Goal "${name}" updated successfully!`);
-            closeAllModals();
-            loadGoals();
-        } else {
-            addNotification("Goal not found. Could not update.");
-            console.log("Goal not found for ID:", id);
-        }
+      const response = await fetch(`${API_BASE_URL}/goals/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          category,
+          targetAmount,
+          currentSavings,
+          targetDate,
+          updatedAt: updatedGoal.updatedAt
+        })
+      });
+
+      if (response.ok) {
+        const apiGoal = await response.json();
+        console.log('API updated goal:', apiGoal);
+        const normalizedGoal = {
+          ...apiGoal,
+          id: apiGoal._id,
+          _id: apiGoal._id
+        };
+        updateLocalGoal(normalizedGoal);
+        addNotification(`Goal "${name}" updated successfully!`);
+        closeAllModals();
+        await loadGoals();
+        return;
+      } else {
+        const error = await response.json();
+        console.error('API error:', error);
+        throw new Error(error.error || 'Failed to update goal via API');
+      }
     } catch (error) {
-        console.error("Error updating goal:", error);
-        addNotification("Error updating goal. Please try again.");
+      console.warn("API update failed, falling back to local storage:", error);
+      addNotification(`API error: ${error.message}. Saving locally.`);
     }
+
+    // Fallback to local storage
+    let goals = JSON.parse(localStorage.getItem('goals')) || [];
+    console.log('Goals before update:', goals);
+
+    const goalIndex = goals.findIndex(g => g.id === id || g._id === id);
+
+    if (goalIndex === -1) {
+      addNotification("Goal not found. Could not update.");
+      console.error("Goal not found for ID:", id);
+      return;
+    }
+
+    updatedGoal.createdAt = goals[goalIndex].createdAt || new Date().toISOString();
+    goals[goalIndex] = updatedGoal;
+    localStorage.setItem('goals', JSON.stringify(goals));
+    console.log('Goals after update:', goals);
+
+    addNotification(`Goal "${name}" updated locally!`);
+    closeAllModals();
+    await loadGoals();
+  } catch (error) {
+    console.error("Error updating goal:", error);
+    addNotification("Error updating goal. Please try again.");
+  }
 }
 
 async function deleteGoal() {

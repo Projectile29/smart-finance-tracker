@@ -399,7 +399,11 @@ app.delete('/budgets/:id', async (req, res) => {
 const goalSchema = new mongoose.Schema({
   name: { type: String, required: true },
   targetAmount: { type: Number, required: true },
-  currentSavings: { type: Number, required: true }
+  currentSavings: { type: Number, required: true },
+  category: { type: String, default: 'other' }, // Add category with default
+  targetDate: { type: String, default: null }, // Allow null for no date
+  createdAt: { type: String, default: () => new Date().toISOString() }, // Add creation timestamp
+  updatedAt: { type: String } // Add update timestamp
 });
 
 const Goal = mongoose.model('Goal', goalSchema);
@@ -433,18 +437,42 @@ app.post("/goals", async (req, res) => {
 
 app.put("/goals/:id", async (req, res) => {
   try {
-    const { name, targetAmount, currentSavings } = req.body;
+    const { name, targetAmount, currentSavings, category, targetDate, updatedAt } = req.body;
+
+    // Validate required fields
+    if (!name || !targetAmount || currentSavings === undefined) {
+      return res.status(400).json({ error: "Missing required fields: name, targetAmount, currentSavings" });
+    }
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: "Invalid goal ID" });
+    }
+
+    const updateData = {
+      name,
+      targetAmount,
+      currentSavings,
+      category: category || 'other',
+      targetDate: targetDate || null,
+      updatedAt: updatedAt || new Date().toISOString()
+    };
+
     const updatedGoal = await Goal.findByIdAndUpdate(
       req.params.id,
-      { name, targetAmount, currentSavings },
+      updateData,
       { new: true, runValidators: true }
     );
 
-    if (!updatedGoal) return res.status(404).json({ error: "Goal not found" });
+    if (!updatedGoal) {
+      return res.status(404).json({ error: "Goal not found" });
+    }
+
+    console.log('Goal updated:', updatedGoal); // Log for debugging
     res.json(updatedGoal);
   } catch (err) {
     console.error("Error updating goal:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 });
 
