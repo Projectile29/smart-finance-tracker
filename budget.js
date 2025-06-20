@@ -1,5 +1,8 @@
 let transactions = [];
 
+// Define income categories to exclude
+const incomeCategories = ['Salary', 'Freelance', 'Investment'];
+
 document.addEventListener("DOMContentLoaded", async () => {
     await fetchTransactions();
     await createCategoriesFromTransactions();
@@ -73,8 +76,8 @@ function addCategory() {
     const name = document.getElementById('categoryName').value.trim();
     const budget = parseFloat(document.getElementById('categoryBudget').value);
 
-    if (!name || isNaN(budget) || budget <= 0) {
-        alert('Please enter valid details!');
+    if (!name || isNaN(budget) || budget <= 0 || incomeCategories.includes(name)) {
+        alert('Please enter valid details or avoid income categories!');
         return;
     }
 
@@ -135,7 +138,7 @@ async function fetchTransactions() {
         const response = await fetch('http://localhost:5000/transactions');
         if (!response.ok) throw new Error('Network response was not ok');
         transactions = await response.json();
-        console.log("Budget page fetched transactions:", transactions.map(tx => ({ date: tx.date, category: tx.category })));
+        console.log("Fetched transactions:", transactions.map(tx => ({ date: tx.date, category: tx.category })));
     } catch (error) {
         console.error("Error fetching transactions:", error);
     }
@@ -144,7 +147,8 @@ async function fetchTransactions() {
 // Create Budget Categories from Transactions
 async function createCategoriesFromTransactions() {
     try {
-        const transactionCategories = [...new Set(transactions.map(tx => tx.category))];
+        const transactionCategories = [...new Set(transactions.map(tx => tx.category))]
+            .filter(category => !incomeCategories.includes(category));
         const currentMonth = new Date().toISOString().slice(0, 7);
         const budgetsResponse = await fetch('http://localhost:5000/budgets');
         if (!budgetsResponse.ok) throw new Error('Failed to fetch budgets');
@@ -174,7 +178,7 @@ async function syncBudgetsWithTransactions() {
 
         const currentMonthTransactions = transactions.filter(tx => {
             const txDate = new Date(tx.date);
-            return txDate >= monthStart && txDate <= monthEnd;
+            return txDate >= monthStart && txDate <= monthEnd && !incomeCategories.includes(tx.category);
         });
 
         const spentByCategory = currentMonthTransactions.reduce((acc, tx) => {
@@ -186,14 +190,32 @@ async function syncBudgetsWithTransactions() {
         if (!budgetsResponse.ok) throw new Error('Failed to fetch budgets');
         const budgets = await budgetsResponse.json();
 
-        for (const budget of budgets) {
-            const newSpent = spentByCategory[budget.name] || 0;
-            if (newSpent !== budget.spent) {
-                await fetch(`http://localhost:5000/budgets/${budget._id}`, {
-                    method: 'PUT',
+        // Get all unique categories from transactions
+        const transactionCategories = [...new Set(transactions.map(tx => tx.category))]
+            .filter(category => !incomeCategories.includes(category));
+
+        // Recreate deleted categories that have transactions
+        const existingCategoryNames = budgets.map(b => b.name);
+        for (const category of transactionCategories) {
+            if (!existingCategoryNames.includes(category)) {
+                await fetch('http://localhost:5000/budgets', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ budget: budget.budget, spent: newSpent })
+                    body: JSON.stringify({ name: category, budget: 0, spent: 0, month: currentMonth })
                 });
+            }
+        }
+
+        for (const budget of budgets) {
+            if (!incomeCategories.includes(budget.name)) {
+                const newSpent = spentByCategory[budget.name] || 0;
+                if (newSpent !== budget.spent) {
+                    await fetch(`http://localhost:5000/budgets/${budget._id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ budget: budget.budget, spent: newSpent })
+                    });
+                }
             }
         }
         await updateTable();
@@ -240,11 +262,17 @@ async function updateTable() {
         if (!response.ok) throw new Error('Failed to fetch budgets');
         let budgets = await response.json();
 
+        // Filter out income categories and deduplicate by _id
+        budgets = budgets.filter(budget => !incomeCategories.includes(budget.name));
+        budgets = Array.from(new Map(budgets.map(b => [b._id, b])).values());
+
         const latestTransactionDates = {};
         transactions.forEach(tx => {
-            const txDate = new Date(tx.date).getTime();
-            if (!latestTransactionDates[tx.category] || txDate > latestTransactionDates[tx.category]) {
-                latestTransactionDates[tx.category] = txDate;
+            if (!incomeCategories.includes(tx.category)) {
+                const txDate = new Date(tx.date).getTime();
+                if (!latestTransactionDates[tx.category] || txDate > latestTransactionDates[tx.category]) {
+                    latestTransactionDates[tx.category] = txDate;
+                }
             }
         });
         console.log("Latest transaction dates by category:", latestTransactionDates);
@@ -257,7 +285,7 @@ async function updateTable() {
         console.log("Sorted budgets:", budgets.map(b => ({ name: b.name, latestTransactionDate: latestTransactionDates[b.name] ? new Date(latestTransactionDates[b.name]).toISOString() : 'None' })));
 
         budgets.forEach(budget => {
-            const remaining = budget.budget - budget.spent;
+            const remaining = Math.max(0, budget.budget - budget.spent);
             totalBudget += budget.budget;
             totalRemaining += remaining;
 
