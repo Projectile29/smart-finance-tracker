@@ -640,18 +640,14 @@ console.log('Imported:', { CashFlowPrediction, CashFlowPredictor });
 
 app.post('/api/cash-flow/generate-predictions', async (req, res) => {
   try {
-    console.log('Handling /api/cash-flow/generate-predictions');
     const transactions = await Transaction.find({}).sort({ transactionId: 1 });
-
-    if (!transactions.length) {
-      return res.status(400).json({ error: 'No transactions available for prediction' });
-    }
+    if (!transactions.length) return res.status(400).json({ error: 'No transactions available for prediction' });
 
     const predictor = new CashFlowPredictor(transactions);
     const today = new Date();
     const currentMonthStr = today.toISOString().slice(0, 7);
 
-    // === STEP 1: Regenerate missing past predictions ===
+    // Get past months (excluding current month)
     const pastMonths = [...new Set(transactions.map(tx => new Date(tx.date).toISOString().slice(0, 7)))]
       .filter(month => month < currentMonthStr)
       .sort();
@@ -673,81 +669,140 @@ app.post('/api/cash-flow/generate-predictions', async (req, res) => {
       await CashFlowPrediction.insertMany(regeneratedPastPredictions, { ordered: false });
     }
 
-    // === STEP 2: Generate predictions for current and next month ===
-    const currentDate = new Date();
-    currentDate.setDate(1);
-    const nextMonthDate = new Date(currentDate);
-    nextMonthDate.setMonth(currentDate.getMonth() + 1);
-
-    const futurePredictions = predictor.calculateFuturePredictions(currentDate, transactions, 2); // current + next month
+    // Generate predictions for next 3 months starting from next month
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    const futurePredictions = predictor.calculateFuturePredictions(nextMonth, transactions, 3);
     const futureMonths = futurePredictions.map(p => p.month);
 
-    // Remove any existing future predictions for those months
-    await CashFlowPrediction.deleteMany({ month: { $in: futureMonths, $gte: currentMonthStr } });
-
-    // Save new predictions
+    // Delete existing future predictions and current month
+    await CashFlowPrediction.deleteMany({ month: { $gte: currentMonthStr } });
     await CashFlowPrediction.insertMany(futurePredictions, { ordered: false });
 
     res.status(200).json({
       message: 'Cash flow predictions generated successfully',
-      predictions: futurePredictions
+      pastPredictions: regeneratedPastPredictions,
+      futurePredictions
     });
-
   } catch (error) {
     console.error('Error generating cash flow predictions:', error);
-    res.status(500).json({
-      error: 'Failed to generate predictions',
-      message: error.message
-    });
+    res.status(500).json({ error: 'Failed to generate predictions', message: error.message });
   }
 });
 
-
+// === FETCH CASH FLOW PREDICTIONS ===
 app.get('/api/cash-flow/predictions', async (req, res) => {
   try {
     const { direction } = req.query;
     const today = new Date();
     const currentMonthStr = today.toISOString().slice(0, 7);
 
-    let predictions = await CashFlowPrediction.find({}).sort({ month: 1 });
+    // Generate predictions if none exist for past months (excluding current month)
+    const transactions = await Transaction.find({}).sort({ transactionId: 1 });
+    const predictor = new CashFlowPredictor(transactions);
+    const pastMonths = [...new Set(transactions.map(tx => new Date(tx.date).toISOString().slice(0, 7)))]
+      .filter(month => month < currentMonthStr)
+      .sort();
+    
+    const existingPredictions = await CashFlowPrediction.find({});
+    const existingMonthsSet = new Set(existingPredictions.map(p => p.month));
+    const missingPastMonths = pastMonths.filter(m => !existingMonthsSet.has(m));
+    
+    if (missingPastMonths.length > 0) {
+      const regeneratedPastPredictions = [];
+      for (const month of missingPastMonths) {
+        const pastDate = new Date(month + '-01');
+        const prediction = predictor.calculateFuturePredictions(pastDate, transactions, 1)[0];
+        prediction.month = month;
+        regeneratedPastPredictions.push(prediction);
+      }
+      await CashFlowPrediction.insertMany(regeneratedPastPredictions, { ordered: false });
+    }
+
+    // Generate future predictions for exactly 3 months
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    const futurePredictions = predictor.calculateFuturePredictions(nextMonth, transactions, 3);
+    await CashFlowPrediction.deleteMany({ month: { $gte: currentMonthStr } });
+    await CashFlowPrediction.insertMany(futurePredictions, { ordered: false });
+
+    let predictions = await CashFlowPrediction.find({ month: { $ne: currentMonthStr } }).sort({ month: 1 });
 
     const seen = new Set();
     predictions = predictions.filter(p => {
       const month = p.month;
-      if (month === currentMonthStr) return false;
       if (seen.has(month)) return false;
       seen.add(month);
       return (direction === 'past') ? (month < currentMonthStr) : (month > currentMonthStr);
     });
 
     if (direction === 'future') {
-      predictions = predictions.slice(0, 6);
+      predictions = predictions.slice(0, 3); // Ensure exactly 3 future months
     }
 
-    if (direction === 'past') {
-      const allTransactions = await Transaction.find({});
-      const actualMap = {};
+    // Attach categoryBreakdown and actual data to each prediction
+    const finalPredictions = await Promise.all(predictions.map(async (p) => {
+      const analysis = await predictor.getAnalysis(p.month);
+      const actual = analysis.actualCashFlow
+        ? { income: analysis.actualIncome, expenses: analysis.actualExpenses }
+        : null;
+      return {
+        ...p.toObject(),
+        totalActualAmount: actual ? Math.round((actual.income - actual.expenses) * 100) / 100 : null,
+        categoryBreakdown: analysis.categoryBreakdown || p.categoryBreakdown || {}
+      };
+    }));
 
-      allTransactions.forEach(tx => {
-        const txMonth = new Date(tx.date).toISOString().slice(0, 7);
-        if (!actualMap[txMonth]) actualMap[txMonth] = { income: 0, expenses: 0 };
-        actualMap[txMonth].expenses += Math.abs(tx.amount);
-      });
-
-      predictions = predictions.map(p => {
-        const actual = actualMap[p.month];
-        const totalActualAmount = actual ? Math.round(-actual.expenses) : null;
-        return {
-          ...p.toObject(),
-          totalActualAmount
-        };
-      });
-    }
-
-    res.status(200).json(predictions);
+    console.log('Final Predictions:', finalPredictions); // Debugging
+    res.status(200).json(finalPredictions);
   } catch (error) {
     console.error('Error fetching cash flow predictions:', error);
     res.status(500).json({ error: 'Failed to fetch predictions', message: error.message });
+  }
+});
+
+// === Other Routes (Unchanged) ===
+app.post('/api/cash-flow/generate-predictions', async (req, res) => {
+  try {
+    const transactions = await Transaction.find({}).sort({ transactionId: 1 });
+    if (!transactions.length) return res.status(400).json({ error: 'No transactions available for prediction' });
+
+    const predictor = new CashFlowPredictor(transactions);
+    const today = new Date();
+    const currentMonthStr = today.toISOString().slice(0, 7);
+
+    const pastMonths = [...new Set(transactions.map(tx => new Date(tx.date).toISOString().slice(0, 7)))]
+      .filter(month => month < currentMonthStr)
+      .sort();
+
+    const existingPredictions = await CashFlowPrediction.find({});
+    const existingMonthsSet = new Set(existingPredictions.map(p => p.month));
+
+    const missingPastMonths = pastMonths.filter(m => !existingMonthsSet.has(m));
+    const regeneratedPastPredictions = [];
+
+    for (const month of missingPastMonths) {
+      const pastDate = new Date(month + '-01');
+      const prediction = predictor.calculateFuturePredictions(pastDate, transactions, 1)[0];
+      prediction.month = month;
+      regeneratedPastPredictions.push(prediction);
+    }
+
+    if (regeneratedPastPredictions.length > 0) {
+      await CashFlowPrediction.insertMany(regeneratedPastPredictions, { ordered: false });
+    }
+
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    const futurePredictions = predictor.calculateFuturePredictions(nextMonth, transactions, 3);
+    await CashFlowPrediction.deleteMany({ month: { $gte: currentMonthStr } });
+    await CashFlowPrediction.insertMany(futurePredictions, { ordered: false });
+
+    res.status(200).json({
+      message: 'Cash flow predictions generated successfully',
+      pastPredictions: regeneratedPastPredictions,
+      futurePredictions
+    });
+  } catch (error) {
+    console.error('Error generating cash flow predictions:', error);
+    res.status(500).json({ error: 'Failed to generate predictions', message: error.message });
   }
 });
 
@@ -757,14 +812,15 @@ app.post('/api/cash-flow/set-actual', async (req, res) => {
     if (!month || actualCashFlow == null) {
       return res.status(400).json({ error: 'Month and actualCashFlow are required' });
     }
+
     const result = await CashFlowPrediction.findOneAndUpdate(
       { month },
       { actualCashFlow },
       { new: true }
     );
-    if (!result) {
-      return res.status(404).json({ error: 'Prediction not found' });
-    }
+
+    if (!result) return res.status(404).json({ error: 'Prediction not found' });
+
     res.status(200).json({ message: 'Actual cash flow updated', prediction: result });
   } catch (error) {
     console.error('Error setting actual cash flow:', error);
@@ -775,18 +831,30 @@ app.post('/api/cash-flow/set-actual', async (req, res) => {
 app.get('/api/cash-flow/analysis', async (req, res) => {
   try {
     const { month } = req.query;
-    if (!month) {
-      return res.status(400).json({ error: 'Month is required' });
-    }
+    if (!month) return res.status(400).json({ error: 'Month is required' });
+
     const transactions = await Transaction.find({}).sort({ transactionId: 1 });
     const predictor = new CashFlowPredictor(transactions);
     const analysis = await predictor.getAnalysis(month);
-    res.status(200).json(analysis);
+
+    const enhancedAnalysis = {
+      ...analysis,
+      categoryBreakdown: Object.entries(analysis.categoryBreakdown).reduce((acc, [category, data]) => {
+        acc[category] = {
+          amount: data.amount,
+          type: data.type
+        };
+        return acc;
+      }, {})
+    };
+
+    res.status(200).json(enhancedAnalysis);
   } catch (error) {
     console.error('Error fetching analysis:', error);
     res.status(500).json({ error: 'Failed to fetch analysis', message: error.message });
   }
 });
+
 
 // === Report Routes ===
 
